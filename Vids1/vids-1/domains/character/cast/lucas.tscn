@@ -9,6 +9,7 @@ script = ExtResource("2_data")
 id = "lucas"
 display_name = "Lucas"
 voices = {
+"en": "en_GB-alan-medium",
 "es": "es_AR-daniela-high"
 }
 voice_pitch = 0.9

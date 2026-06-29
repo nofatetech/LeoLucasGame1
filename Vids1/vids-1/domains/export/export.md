@@ -15,6 +15,10 @@ godot --path . --fixed-fps 30 --write-movie out.avi res://scenes/main.tscn -- --
 ffmpeg -i out.avi -c:v libx264 -pix_fmt yuv420p -c:a aac out.mp4
 ```
 
+Optional user flags after `--`: `--episode res://episodes/<name>.md` (which script) and
+`--language <code>` (fallback language below the script's own `language:` — the Studio dock
+passes the show/season default here).
+
 The Director quits automatically when `--render` is passed (it checks
 `OS.get_cmdline_user_args()` — args after `--`, which the engine always preserves). Quitting is
 what stops the writer and finalizes the file. In the editor (no flag) it plays through and

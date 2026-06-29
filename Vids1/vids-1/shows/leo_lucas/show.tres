@@ -1,17 +1,15 @@
-[gd_resource type="Resource" script_class="Show" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="Show" format=3 uid="uid://c7x7p5ve1x1oe"]
 
-[ext_resource type="Script" path="res://domains/show/show.gd" id="1_show"]
-[ext_resource type="Script" path="res://domains/show/season.gd" id="2_season"]
-[ext_resource type="Script" path="res://domains/show/episode_ref.gd" id="3_ep"]
+[ext_resource type="Script" uid="uid://d0dvbn4s7xit2" path="res://domains/show/show.gd" id="1_show"]
+[ext_resource type="Script" uid="uid://d0jc1v0bvrvta" path="res://domains/show/season.gd" id="2_season"]
+[ext_resource type="Script" uid="uid://cxwvey75xcnbk" path="res://domains/show/episode_ref.gd" id="3_ep"]
 
 [sub_resource type="Resource" id="ep_cookie"]
 script = ExtResource("3_ep")
 title = "The Last Cookie"
-number = 1
 md_path = "res://episodes/cookie.md"
-language = ""
-status = ""
-last_output = ""
+status = "rendered"
+last_output = "/home/user1/dev/LeoLucasGame1/gitrepo_LeoLucasGame1/Vids1/vids-1/output/cookie.avi"
 
 [sub_resource type="Resource" id="ep_cow"]
 script = ExtResource("3_ep")
@@ -19,21 +17,16 @@ title = "La vaca que interrumpe"
 number = 2
 md_path = "res://episodes/cow.md"
 language = "es"
-status = ""
-last_output = ""
+status = "rendered"
+last_output = "/home/user1/dev/LeoLucasGame1/gitrepo_LeoLucasGame1/Vids1/vids-1/output/cow.avi"
 
 [sub_resource type="Resource" id="season_1"]
 script = ExtResource("2_season")
 title = "Season 1"
-number = 1
-language = ""
 episodes = [SubResource("ep_cookie"), SubResource("ep_cow")]
 
 [resource]
 script = ExtResource("1_show")
 title = "Leo & Lucas"
 default_language = "es"
-fps = 30
-resolution = Vector2i(1280, 720)
-output_dir = "res://output"
 seasons = [SubResource("season_1")]

@@ -85,7 +85,8 @@ func _on_preview() -> void:
 	if ep == null:
 		return
 	OS.create_process(_godot_bin(), [
-		"--path", _project_dir(), MAIN_SCENE, "--", "--episode", ep.md_path])
+		"--path", _project_dir(), MAIN_SCENE,
+		"--", "--episode", ep.md_path, "--language", _structural_language(ep)])
 	_status.text = "Preview: %s" % ep.title
 
 func _on_render() -> void:
@@ -126,7 +127,7 @@ func _render_one(ep: EpisodeRef) -> void:
 		"--fixed-fps", str(_show.fps),
 		"--write-movie", out,
 		MAIN_SCENE,
-		"--", "--render", "--episode", ep.md_path]
+		"--", "--render", "--episode", ep.md_path, "--language", _structural_language(ep)]
 	_render_pid = OS.create_process(_godot_bin(), args)
 	if _render_pid <= 0:
 		_status.text = "Failed to launch render"
@@ -160,6 +161,15 @@ func _next_in_queue() -> void:
 		_render_one(_queue.pop_front())
 
 # --- helpers ---
+
+# Structural language fallback (below the .md's own `language:`): episode -> season -> show.
+func _structural_language(ep: EpisodeRef) -> String:
+	if ep.language != "":
+		return ep.language
+	for season in _show.seasons:
+		if season.episodes.has(ep):
+			return season.language if season.language != "" else _show.default_language
+	return _show.default_language
 
 func _selected_episode() -> EpisodeRef:
 	var item := _tree.get_selected()

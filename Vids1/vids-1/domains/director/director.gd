@@ -20,6 +20,7 @@ const AMBIENCE_DB := -16.0
 
 var _cast := {}
 var _episode_language := ""
+var _fallback_language := ""   # show/season default, passed by the Studio dock via --language
 var _spans := {}   # "music"/"ambience" name -> AudioStreamPlayer (active spans)
 
 func _ready() -> void:
@@ -30,6 +31,7 @@ func run() -> void:
 	# "parent busy setting up children" guard and the nodes never enter the tree.
 	await get_tree().process_frame
 	var path := _resolve_episode_path()
+	_fallback_language = _cmdline_value("--language")
 	var script := ScriptParser.parse_file(path)
 	_episode_language = script.language
 	Log.info("Playing '%s' (%d beats, lang=%s, tts=%s)" % [
@@ -87,7 +89,8 @@ func _clip_for(c: Character, beat: Dictionary) -> Dictionary:
 	var dur := maxf(MIN_BEAT, SECS_PER_CHAR * beat.text.length())
 	return {"wav": Tone.speech_like(dur, 140.0 * c.data.voice_pitch), "dur": dur}
 
-## Language for a line, most specific first: @lang -> character -> episode -> default.
+## Language for a line, most specific first:
+## @lang -> character -> episode (.md) -> show/season (--language) -> hard default.
 func _resolve_language(beat: Dictionary, c: Character) -> String:
 	if beat.get("lang", "") != "":
 		return beat.lang
@@ -95,6 +98,8 @@ func _resolve_language(beat: Dictionary, c: Character) -> String:
 		return c.data.language
 	if _episode_language != "":
 		return _episode_language
+	if _fallback_language != "":
+		return _fallback_language
 	return DEFAULT_LANGUAGE
 
 func _wav_seconds(wav: AudioStreamWAV) -> float:
@@ -181,11 +186,14 @@ func _spread(n: int) -> Array:
 ## Episode to play: the exported default, overridable at render time with
 ## `-- --episode res://episodes/<name>.md` (no code edit needed).
 func _resolve_episode_path() -> String:
+	var override := _cmdline_value("--episode")
+	return override if override != "" else episode_path
+
+## Value following a user-arg flag (after `--`), or "" if absent.
+func _cmdline_value(flag: String) -> String:
 	var uargs := OS.get_cmdline_user_args()
-	var i := uargs.find("--episode")
-	if i != -1 and i + 1 < uargs.size():
-		return uargs[i + 1]
-	return episode_path
+	var i := uargs.find(flag)
+	return uargs[i + 1] if i != -1 and i + 1 < uargs.size() else ""
 
 func _set_subtitle(speaker: String, text: String) -> void:
 	var label := get_node_or_null("%Subtitle") as Label

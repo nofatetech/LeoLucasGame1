@@ -1,6 +1,7 @@
 ---
 episode: "s01e01"
 title: "The Last Cookie"
+language: en
 cast: { leo: leo, lucas: lucas }
 ---
 

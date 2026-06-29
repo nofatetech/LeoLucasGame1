@@ -114,10 +114,11 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
 - [x] Editor dock (`addons/vids_studio/`): browse the season/episode tree, Preview / Render /
       Render-all / Open-output; render status persists back to the `.tres`
 - [x] Verified: editor mounts the plugin cleanly; the dock's render command produces
-      `output/cow.avi` (it shells out to the same CLI we use by hand)
+	  `output/cow.avi` (it shells out to the same CLI we use by hand)
+- [x] Show/season `language` wired into the Director: the dock passes `--language` (resolved
+      episode→season→show default); it sits below the `.md`'s own `language:` in the chain
 - [ ] Remaining: inline param editing in the dock (use the Inspector on `show.tres` for now);
-      wire show/season `language` into the Director's resolution chain (needs the episode's
-      show context — episode `language:` covers it today); in-editor click-through QA
+      in-editor click-through QA
 - **Note:** verified headlessly (load + render path); give the buttons a click in the editor.
 
 ### M6 — Localization output  ⬜
@@ -169,7 +170,13 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
   `OS.create_process`, polls the PID, persists `status=rendered` back to the `.tres`. Verified
   headlessly — editor mounts the plugin clean, show.tres deserializes, dock render command
   produces `output/cow.avi`. Remaining: in-dock param editing + show/season into the language
-  chain + click-through QA. **Next: M6 (.srt captions + per-language variant renders).**
+  chain + click-through QA.
+- **2026-06-28** — **Bilingual cast + show-language wiring.** Cookie was silent-ish (English
+  text, cast had only `es` voices → placeholder tone). Gave Leo/Lucas English voices
+  (`en_US-ryan-high`, `en_GB-alan-medium`), declared `language: en` on `cookie.md`, and wired
+  the show/season default into the Director via a `--language` arg the dock passes (sits below
+  the `.md` language in the chain). Cookie now renders in real English speech; cow stays
+  Spanish. Cast is multilingual (>1 voice). **Next: M6, or M5 dock polish.**
 
 ---
 
