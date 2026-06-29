@@ -42,20 +42,22 @@ Same model covers sound, animation, and camera. Full detail in the timeline spec
 
 ```
 vids-1/
-  docs/                  ← you are here
-  autoload/              event_bus, config
+  docs/                  ← you are here (README + plan-* + spec)
+  addons/vids_studio/    editor dock (browse/preview/render)
   domains/
-    script/              md parser → EpisodeScript (script_parser.gd, episode_script.gd)
-    director/            beat playback, pacing, cast spawn
-    character/           character.gd (contract) + mouth.gd + character_data.gd
-      cast/              hand-editable per-character scenes (leo.tscn, lucas.tscn)
-      cast_registry.gd   id → cast scene
+    script/              md parser → EpisodeScript
+    director/            beat playback, pacing, cast spawn, audio events
+    character/           character.gd (contract) + mouth.gd + character_data.gd (bible)
+      cast_registry.gd   id → cast scene (dynamic: scans universes/)
       character.tscn     TEMPLATE to duplicate for new characters
-    audio/               tone (placeholder voice), clip_amplitude (mouth driver)
-    stage/               [later] backgrounds, props, camera
-    export/              Movie Maker how-to (export.md)
-  episodes/              the .md scripts (cookie.md)
+    audio/               tts (Piper), tone, clip_amplitude, audio_library (sfx/music)
+    show/                Show / Season / EpisodeRef resources
+    universe/            Universe resource
+  universes/<id>/        characters/<id>.tscn (+ universe.tres) — reusable cast
+  shows/<id>/            show.tres
+  episodes/              the .md scripts (cookie.md, cow.md)
   scenes/                main.tscn (entry)
+  output/                rendered videos (gitignored)
 ```
 
 ---
@@ -116,7 +118,7 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
 - [x] Verified: editor mounts the plugin cleanly; the dock's render command produces
 	  `output/cow.avi` (it shells out to the same CLI we use by hand)
 - [x] Show/season `language` wired into the Director: the dock passes `--language` (resolved
-      episode→season→show default); it sits below the `.md`'s own `language:` in the chain
+	  episode→season→show default); it sits below the `.md`'s own `language:` in the chain
 - [ ] Remaining: inline param editing in the dock (use the Inspector on `show.tres` for now);
       in-editor click-through QA
 - **Note:** verified headlessly (load + render path); give the buttons a click in the editor.
@@ -124,6 +126,16 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
 ### M6 — Localization output  ⬜
 - [ ] Per-language `.srt` captions as a render byproduct
 - [ ] Language-variant renders from one script (`cow.es.mp4`, `cow.en.mp4`)
+
+### M7 — Universe + productions  🟡 foundation done  (plan: [`plan-universe.md`](plan-universe.md))
+- [x] Characters are a **shared library**: `universes/<id>/characters/*.tscn`, discovered by a
+      dynamic `CastRegistry` (scans universes; id = file basename). Leo/Lucas moved here.
+- [x] `CharacterData` grew a **bible** (bio, personality, relationships, catchphrases, tags)
+- [x] `Universe` resource (`universes/leo_lucas/universe.tres`); `Show.universe` pointer
+- [x] Verified: cow renders unchanged via the dynamic registry (no behavior change)
+- [ ] Next: **moods** (trickle-down presets → music/ambience/bg + Piper voice speed/tone);
+      **Movie** production type; episode/show **templates**; story stages + outline; dock
+      Universe/Characters tabs + auto-derived character history
 
 ---
 
@@ -176,7 +188,14 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
   (`en_US-ryan-high`, `en_GB-alan-medium`), declared `language: en` on `cookie.md`, and wired
   the show/season default into the Director via a `--language` arg the dock passes (sits below
   the `.md` language in the chain). Cookie now renders in real English speech; cow stays
-  Spanish. Cast is multilingual (>1 voice). **Next: M6, or M5 dock polish.**
+  Spanish. Cast is multilingual (>1 voice).
+- **2026-06-28** — **M7 foundation: Universe.** Reframed the model — a Universe owns reusable
+  characters; productions (Shows/Movies) cast from it. Wrote `plan-universe.md` (decisions:
+  universe-first, Movies as a production type, moods shape voice too). Built: `Universe`
+  resource; `CharacterData` bible fields; **dynamic `CastRegistry`** that scans
+  `universes/*/characters/*.tscn` (id = basename); moved Leo/Lucas to
+  `universes/leo_lucas/characters/`; `Show.universe` pointer. Cow re-rendered unchanged →
+  the dynamic registry resolves cast from the new home. **Next: moods, then Movie type.**
 
 ---
 

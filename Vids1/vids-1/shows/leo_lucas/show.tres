@@ -28,5 +28,6 @@ episodes = [SubResource("ep_cookie"), SubResource("ep_cow")]
 [resource]
 script = ExtResource("1_show")
 title = "Leo & Lucas"
+universe = "leo_lucas"
 default_language = "es"
 seasons = [SubResource("season_1")]

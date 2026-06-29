@@ -1,6 +1,7 @@
-# CharacterData - non-visual identity for a character. The LOOK lives in the hand-editable
-# cast scene (domains/character/cast/*.tscn); this holds what the Director needs that isn't
-# visual: identity, language, and per-language TTS voices. Assigned inline on the cast root.
+# CharacterData - identity + bible for a character. The LOOK lives in the hand-editable cast
+# scene (universes/<u>/characters/*.tscn); this holds what isn't visual: identity, language,
+# per-language TTS voices, and reusable lore shared across any production. Inline on the root.
+@tool
 class_name CharacterData
 extends Resource
 
@@ -16,6 +17,14 @@ extends Resource
 @export var voices: Dictionary = {}
 ## Placeholder-tone pitch multiplier, used only when no real voice is available for a line.
 @export var voice_pitch: float = 1.0
+
+@export_group("Bible")
+## Reusable character lore — shared across any production in the universe. All optional.
+@export_multiline var bio: String = ""
+@export var personality: String = ""
+@export var relationships: Dictionary = {}   # other character id -> label, e.g. "brother"
+@export var catchphrases: Array = []
+@export var tags: Array = []                  # free-form, e.g. ["kid", "lead"]
 
 ## The voice model name for a resolved language, or "" if none.
 func voice_for(lang: String) -> String:
