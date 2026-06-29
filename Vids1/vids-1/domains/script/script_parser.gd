@@ -52,6 +52,9 @@ static func _parse_dialogue(line: String, colon: int, scene: String, ep: Episode
 	if at != -1:
 		lang = alias.substr(at + 1).strip_edges()
 		alias = alias.substr(0, at).strip_edges()
+	# inline directives on a dialogue line fire at the line's start (Point/Span).
+	var stripped := _strip_directives(rest)
+	rest = stripped.text
 	var emote := ""
 	if rest.begins_with("("):                          # optional (emote) prefix
 		var close := rest.find(")")
@@ -61,34 +64,60 @@ static func _parse_dialogue(line: String, colon: int, scene: String, ep: Episode
 	ep.beats.append({
 		"type": "say", "speaker": ep.resolve(alias),
 		"text": rest, "emote": emote, "lang": lang, "scene": scene,
+		"directives": stripped.events,
 	})
 
+# Directive-only line: each [..] becomes its own beat at the current playhead.
 static func _parse_directive_line(line: String, ep: EpisodeScript) -> void:
-	for d in _extract_directives(line):
-		if d.verb == "wait":
-			ep.beats.append({"type": "wait", "seconds": float(d.args)})
-		else:
-			push_warning("Directive not yet supported, skipped: [%s]" % d.verb)
+	for ev in _strip_directives(line).events:
+		ep.beats.append(ev)
 
-static func _extract_directives(line: String) -> Array:
-	var out := []
+# Pull every [verb: args] out of text, returning the cleaned text plus normalized events.
+static func _strip_directives(text: String) -> Dictionary:
+	var events := []
+	var out := ""
 	var j := 0
-	while j < line.length():
-		if line[j] == "[":
-			var k := line.find("]", j)
+	while j < text.length():
+		if text[j] == "[":
+			var k := text.find("]", j)
 			if k == -1:
+				out += text.substr(j)
 				break
-			out.append(_parse_directive(line.substr(j + 1, k - j - 1)))
+			var ev := _normalize(text.substr(j + 1, k - j - 1))
+			if not ev.is_empty():
+				events.append(ev)
 			j = k + 1
 		else:
+			out += text[j]
 			j += 1
-	return out
+	return {"text": out.strip_edges(), "events": events}
 
-static func _parse_directive(inner: String) -> Dictionary:
+# Turn a raw directive body into a beat-shaped event, or {} if unknown.
+static func _normalize(inner: String) -> Dictionary:
+	var verb := inner
+	var args := ""
 	var c := inner.find(":")
 	if c != -1:
-		return {"verb": inner.substr(0, c).strip_edges(), "args": inner.substr(c + 1).strip_edges()}
-	return {"verb": inner.strip_edges(), "args": ""}
+		verb = inner.substr(0, c).strip_edges()
+		args = inner.substr(c + 1).strip_edges()
+	var name := ""
+	var action := ""
+	var offset := 0.0
+	for tok in args.split(" ", false):
+		if tok.begins_with("+") or tok.begins_with("-"):
+			offset = float(tok)
+		elif tok == "start" or tok == "stop":
+			action = tok
+		else:
+			name = tok
+	match verb:
+		"wait": return {"type": "wait", "seconds": float(name)}
+		"sfx": return {"type": "sfx", "name": name, "offset": offset}
+		"ambience": return {"type": "ambience", "name": name, "action": action if action else "start"}
+		"music": return {"type": "music", "name": name, "action": action if action else "start"}
+		_:
+			push_warning("Directive not yet supported, skipped: [%s]" % verb)
+			return {}
 
 static func _parse_front_line(raw: String, ep: EpisodeScript) -> void:
 	var line := raw.strip_edges()

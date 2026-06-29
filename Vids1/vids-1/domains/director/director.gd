@@ -13,8 +13,14 @@ const BEAT_GAP := 0.25
 const GROUND_Y := 470.0
 const DEFAULT_LANGUAGE := "en"   # bottom of the language resolution chain
 
+## Music mixing: base level, and how far to duck while someone is speaking.
+const MUSIC_DB := -8.0
+const MUSIC_DUCK_DB := -20.0
+const AMBIENCE_DB := -16.0
+
 var _cast := {}
 var _episode_language := ""
+var _spans := {}   # "music"/"ambience" name -> AudioStreamPlayer (active spans)
 
 func _ready() -> void:
 	run()
@@ -38,7 +44,9 @@ func run() -> void:
 		match beat.get("type"):
 			"say": await _play_say(beat, i)
 			"wait": await get_tree().create_timer(beat.seconds).timeout
+			"sfx", "ambience", "music": _fire_event(beat)   # Points/Spans: never block the clock
 
+	_stop_all_spans()
 	_set_subtitle("", "")
 	EventBus.episode_finished.emit()
 	Log.info("Episode finished", "Director")
@@ -53,12 +61,17 @@ func _play_say(beat: Dictionary, index: int) -> void:
 	if c == null:
 		Log.warning("No cast member for '%s', skipping line" % beat.speaker, "Director")
 		return
+	# Directives attached to this line fire at its start (sfx offsets are relative to here).
+	for ev in beat.get("directives", []):
+		_fire_event(ev)
 	var clip := _clip_for(c, beat)
 	_set_subtitle(c.data.display_name, beat.text)
 	EventBus.beat_started.emit(index, beat.text)
+	_duck_music(MUSIC_DUCK_DB, 0.12)
 	c.speak(clip.wav)
 	await get_tree().create_timer(clip.dur).timeout   # dialogue is the clock
 	c.stop_speaking()
+	_duck_music(MUSIC_DB, 0.2)
 	await get_tree().create_timer(BEAT_GAP).timeout
 
 ## Real TTS clip if a voice resolves for the beat's language; else a placeholder tone.
@@ -86,6 +99,54 @@ func _resolve_language(beat: Dictionary, c: Character) -> String:
 
 func _wav_seconds(wav: AudioStreamWAV) -> float:
 	return (wav.data.size() / 2) / float(wav.mix_rate)   # 16-bit mono
+
+# --- audio events (Point: sfx; Span: ambience/music) ---
+
+func _fire_event(ev: Dictionary) -> void:
+	match ev.type:
+		"sfx": _schedule_sfx(ev.name, ev.get("offset", 0.0))
+		"ambience": _span("ambience", ev)
+		"music": _span("music", ev)
+
+## Play a one-shot, optionally `offset` seconds later. Async, intentionally not awaited.
+func _schedule_sfx(name: String, offset: float) -> void:
+	if offset > 0.0:
+		await get_tree().create_timer(offset).timeout
+	var p := AudioStreamPlayer.new()
+	add_child(p)
+	p.stream = AudioLibrary.sfx(name)
+	p.finished.connect(p.queue_free)
+	p.play()
+
+func _span(kind: String, ev: Dictionary) -> void:
+	var name: String = ev.name
+	var prefix := kind + ":"
+	if ev.get("action", "start") == "stop":
+		# Empty name stops every span of this kind (e.g. "[music: stop]").
+		for key in _spans.keys():
+			if key.begins_with(prefix) and (name == "" or key == prefix + name):
+				_spans[key].queue_free()
+				_spans.erase(key)
+		return
+	var key := prefix + name
+	if _spans.has(key):
+		return
+	var p := AudioStreamPlayer.new()
+	add_child(p)
+	p.stream = AudioLibrary.music(name) if kind == "music" else AudioLibrary.ambience(name)
+	p.volume_db = MUSIC_DB if kind == "music" else AMBIENCE_DB
+	p.play()
+	_spans[key] = p
+
+func _duck_music(db: float, dur: float) -> void:
+	for key in _spans:
+		if key.begins_with("music:"):
+			create_tween().tween_property(_spans[key], "volume_db", db, dur)
+
+func _stop_all_spans() -> void:
+	for p in _spans.values():
+		p.queue_free()
+	_spans.clear()
 
 func _build_cast(script: EpisodeScript) -> void:
 	# Spawn each speaking character once, spread evenly across the stage in first-seen order.

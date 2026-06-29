@@ -83,16 +83,19 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
       Preview-vs-Final toggle (placeholder timing is already the default path)
 - **Done when:** editing the `.md` changes the rendered output, no code edits. ✔
 
-### M2 — Audio & timing for real  🟡 voice core done
+### M2 — Audio & timing for real  ✅ done
 - [x] Local offline TTS via **Piper** (`domains/audio/tts.gd`), per-line clips, cached by
       text+voice hash → deterministic re-renders; falls back to `Tone` if Piper/voice missing
 - [x] Clock resolves from **true clip length** (`_clip_for` / `_wav_seconds` in Director)
 - [x] Language model: episode `language:` + `CharacterData.language`/`voices` + per-line
       `@lang` override, resolved most-specific-first (see [`plan-studio-panel.md`](plan-studio-panel.md) §3)
-- [x] Verified: `cow.md` renders in real LATAM Spanish (Leo `es_MX`, Lucas `es_AR`), lip-synced
-- [x] Subtitles already render from script lines (free)
-- [ ] Remaining: SFX points w/ offsets; ambience/music spans; auto-duck under dialogue
-- **Done when:** Final render has synced voices, sfx, music, and captions.
+- [x] **SFX points** (inline or standalone, optional `+offset`), **ambience/music spans**
+      (`start`/`stop`), **auto-duck** music under dialogue — `AudioLibrary` resolves names to
+      deterministic procedural placeholders (real files drop in by name later)
+- [x] Subtitles render from script lines (free)
+- [x] Verified: `cow.md` renders in real LATAM Spanish (Leo `es_MX`, Lucas `es_AR`),
+      lip-synced, with ducked music + sfx (12 beats, no warnings)
+- **Done:** Final render has synced voices, sfx, ducked music, and on-screen captions.
 
 ### M3 — Reusability & polish  ⬜
 - [ ] Cast registry (parameterized characters: color/hair/accessories)
@@ -146,7 +149,13 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
   verified rendering in real LATAM Spanish (Leo es_MX, Lucas es_AR). Piper binary + voices
   live outside the repo (`~/Apps/piper`, `VIDS_PIPER_BIN` to override). Wrote
   `plan-studio-panel.md` (editor dock + Show/Season model + full language design).
-  **Next: M2 remainder (sfx/music), or M5 (studio panel).**
+- **2026-06-28** — **M2 done.** Audio event model complete (`AudioLibrary` +
+  Director `_fire_event`/`_span`/`_duck_music`): sfx Points (inline w/ optional `+offset`),
+  ambience/music Spans (`start`/`stop`, looped), music auto-ducks under dialogue. Parser
+  normalizes all directives to beat-shaped events; inline directives on a dialogue line fire
+  at line start, standalone ones ride the playhead. Placeholder audio is deterministic
+  procedural synth (no `randf()`), names resolve to real files later. `cow.md` verified with
+  ambience+music+sfx, ducked, no warnings. **Next: M5 (studio panel) or M6 (.srt + variants).**
 
 ---
 
