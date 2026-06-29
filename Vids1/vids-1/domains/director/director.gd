@@ -35,6 +35,10 @@ var _default_bg := Color(0.53, 0.81, 0.92)
 var _episode_style := ""
 var _fallback_style := ""
 
+# Grade state (color grade post pass). The material persists; uniforms change per scene/beat.
+var _grade_mat: ShaderMaterial
+var _mood_grade := ""           # grade implied by the active mood (below scene/beat overrides)
+
 func _ready() -> void:
 	run()
 
@@ -52,6 +56,7 @@ func run() -> void:
 	_episode_style = script.style
 	# Apply style (resolution + post shader) BEFORE the first recorded frame.
 	_apply_style(_resolve_style_name())
+	_setup_grade()   # color-grade post pass (uniforms set per scene below the style shaders)
 	Log.info("Playing '%s' (%d beats, lang=%s, tts=%s)" % [
 		script.title, script.beats.size(),
 		_episode_language if _episode_language else "(default)",
@@ -68,6 +73,7 @@ func run() -> void:
 		match beat.get("type"):
 			"say": await _play_say(beat, i)
 			"wait": await get_tree().create_timer(beat.seconds).timeout
+			"grade": _apply_grade(str(beat.get("name", "")))   # mid-scene look override
 			"sfx", "ambience", "music": _fire_event(beat)   # Points/Spans: never block the clock
 
 	_stop_all_spans()
@@ -134,7 +140,8 @@ func _maybe_apply_mood(beat: Dictionary) -> void:
 	if scene == _scene_seen:
 		return
 	_scene_seen = scene
-	_apply_mood(_resolve_mood_name(str(beat.get("scene_mood", ""))))
+	_apply_mood(_resolve_mood_name(str(beat.get("scene_mood", ""))))   # sets _mood_grade
+	_apply_grade(_resolve_grade_name(str(beat.get("scene_grade", ""))))
 
 ## Mood name, most specific first: scene {mood} -> episode mood: -> --mood -> none.
 func _resolve_mood_name(scene_mood: String) -> String:
@@ -150,12 +157,14 @@ func _apply_mood(name: String) -> void:
 		_pace = m.pace
 		_voice_length = m.voice_length_scale
 		_voice_noise = m.voice_noise_scale
+		_mood_grade = m.grade
 		_set_bg(m.bg_color if m.has_bg() else _default_bg)
 		Log.info("Mood: %s" % name, "Director")
 	else:
 		_pace = 1.0
 		_voice_length = 1.0
 		_voice_noise = 0.667
+		_mood_grade = ""
 		_set_bg(_default_bg)
 
 func _set_bg(color: Color) -> void:
@@ -206,6 +215,49 @@ func _add_post_shader(shader_name: String) -> void:
 	layer.layer = 100   # above scene + subtitles
 	layer.add_child(rect)
 	add_child(layer)
+
+# --- grade (color-grade post pass: tint / contrast / vignette / grain) ---
+
+## Build the persistent grade pass once, below the style shaders. Neutral defaults = identity,
+## so it's a no-op until a scene/mood/beat sets a grade.
+func _setup_grade() -> void:
+	var path := "res://domains/grade/shaders/grade.gdshader"
+	if not ResourceLoader.exists(path):
+		return
+	_grade_mat = ShaderMaterial.new()
+	_grade_mat.shader = load(path)
+	var rect := ColorRect.new()
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.material = _grade_mat
+	var layer := CanvasLayer.new()
+	layer.layer = 50   # grades the scene + cast + subtitles; style shaders (100) sit on top
+	layer.add_child(rect)
+	add_child(layer)
+
+## Grade name, most specific first: scene {grade:} / [grade:] -> active mood's grade -> neutral.
+func _resolve_grade_name(scene_grade: String) -> String:
+	if scene_grade != "":
+		return scene_grade
+	if _mood_grade != "":
+		return _mood_grade
+	return "neutral"
+
+func _apply_grade(name: String) -> void:
+	if _grade_mat == null:
+		return
+	var g := GradeLibrary.get_grade(name)
+	if g == null:
+		g = GradeLibrary.get_grade("neutral")
+	if g == null:
+		return
+	_grade_mat.set_shader_parameter("tint", g.tint)
+	_grade_mat.set_shader_parameter("contrast", g.contrast)
+	_grade_mat.set_shader_parameter("saturation", g.saturation)
+	_grade_mat.set_shader_parameter("temperature", g.temperature)
+	_grade_mat.set_shader_parameter("vignette", g.vignette)
+	_grade_mat.set_shader_parameter("grain", g.grain)
+	Log.info("Grade: %s" % g.id, "Director")
 
 # --- audio events (Point: sfx; Span: ambience/music) ---
 

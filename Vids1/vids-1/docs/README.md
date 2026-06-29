@@ -159,11 +159,15 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
 - [ ] **PD content pack** (`aesop` universe + `fable` format)
 - [ ] **Archetypes** (show presets: sitcom / storytime / news-desk)
 
-### M10 — Moviemaking (cinematography)  ⬜  (plan: [`plan-moviemaking.md`](plan-moviemaking.md))
+### M10 — Moviemaking (cinematography)  🟡 grade done  (plan: [`plan-moviemaking.md`](plan-moviemaking.md))
 Make the flat shows look *shot, not drawn* — a staging layer the Director drives from markdown,
 deterministic, no engine fork. **Auto + override**; keep it simple, ship per slice.
-- [ ] **Slice A — Light & color grade** (`Grade`/`GradeLibrary` + `grade.gdshader`: tint /
-      contrast / vignette / directional gradient / frame-index grain; wired to mood + `[grade:]`)
+- [x] **Slice A — Light & color grade** (`domains/grade/`): `Grade`/`GradeLibrary` +
+      `grade.gdshader` (tint / contrast / saturation / temperature / vignette / TIME-grain),
+      a post pass below the style shaders. Resolved `[grade:]` → scene `{grade:}` → mood's grade
+      → neutral; moods imply a grade (`tense→noir`, `calm/happy→warm`). Scene header `{...}` now
+      multi-key. Verified: tense→noir reads cold/vignetted, and **two renders are byte-identical**
+      (grain deterministic).
 - [ ] **Slice B — Camera & framing** (`Camera2D` + `Shot` presets + auto-frame speaker + moves)
 - [ ] **Slice C — Depth & composition** (parallax bg layers + rule-of-thirds placement)
 - [ ] **Phase 2 (optional)** — character rig: blink / breathe first; brows / look-at / gesture later
@@ -275,6 +279,15 @@ storylets/quality-based, character supernodes). Maps cleanly onto us:
   **format-agnostic** (flat `Polygon2D` / **SVG** / **bitmap** PNG-JPG-WebP, freely mixed — the
   `Character` contract is shape-agnostic); ours-by-default for coherence, CC0 packs supported,
   baked into the repo. Character richness deferred (optional). **Build first: Slice A — grade.**
+- **2026-06-28** — **M10 Slice A — color grade.** New `domains/grade/` (`Grade` + `GradeLibrary`
+  + `grade.gdshader`): a fullscreen post pass (tint / contrast / saturation / temperature /
+  vignette / film grain) below the style shaders. Resolved most-specific-first
+  `[grade:]` → scene `{grade:}` → active mood's grade → `neutral`; built-in moods now imply a
+  grade. Parser: scene header `{...}` is multi-key (`mood`+`grade`, room for `light`/`lens`);
+  added the `grade` directive verb. Verified: `tense`→`noir` renders cold + desaturated +
+  vignetted; **re-render is byte-identical** (TIME-based grain is deterministic under Movie
+  Maker). Note: new `class_name`s need a `.godot` class-cache rescan — happens on editor open
+  (or `godot --editor --headless --quit-after N` for CLI). **Next: Slice B — camera & framing.**
 
 ---
 

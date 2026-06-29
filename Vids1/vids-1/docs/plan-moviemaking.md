@@ -144,8 +144,9 @@ default today). Bake the `.ttf` + license into the repo.
   under ~0.8s. Tunable.
 
 ## Build sequence
-1. **Slice A — Light & color grade** (`Grade`/`GradeLibrary` + `grade.gdshader` + `CanvasModulate`
-   + mood wiring). ← first
-2. **Slice B — Camera & framing** (`Camera2D` + `Shot`/`ShotLibrary` + auto-frame + moves).
+1. ~~**Slice A — Light & color grade** (`Grade`/`GradeLibrary` + `grade.gdshader` + mood wiring).~~
+   ✅ shipped — `domains/grade/`; `[grade:]`/`{grade:}`/mood resolution; byte-identical re-renders.
+   *(CanvasModulate / Light2D accents still optional/later.)*
+2. **Slice B — Camera & framing** (`Camera2D` + `Shot`/`ShotLibrary` + auto-frame + moves). ← next
 3. **Slice C — Depth & composition** (parallax layers + thirds placement).
 4. **Phase 2** — character rig (blink → breathe → brows → look-at → gesture → rim).

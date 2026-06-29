@@ -5,13 +5,13 @@ extends RefCounted
 
 const UNIVERSES_DIR := "res://universes"
 
-# name -> [bg_color, pace, voice_length_scale, voice_noise_scale]
+# name -> [bg_color, pace, voice_length_scale, voice_noise_scale, grade]
 const BUILTIN := {
-	"happy":  [Color(0.53, 0.81, 0.92), 1.0,  1.0,  0.70],
-	"tense":  [Color(0.20, 0.22, 0.30), 1.12, 1.15, 0.45],
-	"calm":   [Color(0.70, 0.85, 0.85), 1.12, 1.12, 0.55],
-	"spooky": [Color(0.10, 0.10, 0.16), 1.15, 1.18, 0.50],
-	"manic":  [Color(0.98, 0.85, 0.45), 0.75, 0.85, 0.85],
+	"happy":  [Color(0.53, 0.81, 0.92), 1.0,  1.0,  0.70, "warm"],
+	"tense":  [Color(0.20, 0.22, 0.30), 1.12, 1.15, 0.45, "noir"],
+	"calm":   [Color(0.70, 0.85, 0.85), 1.12, 1.12, 0.55, "warm"],
+	"spooky": [Color(0.10, 0.10, 0.16), 1.15, 1.18, 0.50, "noir"],
+	"manic":  [Color(0.98, 0.85, 0.45), 0.75, 0.85, 0.85, ""],
 }
 
 ## Returns a Mood for the name, or null if name is "" / unknown.
@@ -33,6 +33,7 @@ static func _from_preset(name: String, p: Array) -> Mood:
 	m.pace = p[1]
 	m.voice_length_scale = p[2]
 	m.voice_noise_scale = p[3]
+	m.grade = p[4]
 	return m
 
 static func _tres_path(name: String) -> String:

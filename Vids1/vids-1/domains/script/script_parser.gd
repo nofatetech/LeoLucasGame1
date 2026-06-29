@@ -26,6 +26,7 @@ static func parse_text(text: String) -> EpisodeScript:
 	# --- body ---
 	var scene := ""
 	var scene_mood := ""
+	var scene_grade := ""
 	while i < lines.size():
 		var line := lines[i].strip_edges()
 		i += 1
@@ -35,6 +36,7 @@ static func parse_text(text: String) -> EpisodeScript:
 			var parsed := _parse_scene_header(line.substr(9))
 			scene = parsed.name
 			scene_mood = parsed.mood
+			scene_grade = parsed.grade
 			continue
 		if line.begins_with("#"):
 			continue                                  # heading / comment
@@ -48,22 +50,30 @@ static func parse_text(text: String) -> EpisodeScript:
 		for b in beats:                               # stamp scene context on every beat
 			b["scene"] = scene
 			b["scene_mood"] = scene_mood
+			b["scene_grade"] = scene_grade
 			ep.beats.append(b)
 	return ep
 
-# "kitchen — night {mood: tense}" -> {name, mood}
+# "kitchen — night {mood: tense, grade: noir}" -> {name, mood, grade}.
+# The {...} block is comma-separated `key: value` pairs (mood/grade today; light/lens later).
 static func _parse_scene_header(s: String) -> Dictionary:
 	s = s.strip_edges()
 	var mood := ""
+	var grade := ""
 	var b := s.find("{")
 	if b != -1:
 		var e := s.find("}", b)
 		if e != -1:
-			var ev := _normalize(s.substr(b + 1, e - b - 1))   # reuse {verb: args} parser
-			if ev.get("type") == "mood":
-				mood = ev.name
+			for pair in s.substr(b + 1, e - b - 1).split(","):
+				var c := pair.find(":")
+				if c != -1:
+					var k := pair.substr(0, c).strip_edges()
+					var v := pair.substr(c + 1).strip_edges()
+					match k:
+						"mood": mood = v
+						"grade": grade = v
 			s = s.substr(0, b).strip_edges()
-	return {"name": s, "mood": mood}
+	return {"name": s, "mood": mood, "grade": grade}
 
 static func _dialogue_beat(line: String, colon: int, ep: EpisodeScript) -> Dictionary:
 	var alias := line.substr(0, colon).strip_edges()
@@ -130,6 +140,7 @@ static func _normalize(inner: String) -> Dictionary:
 	match verb:
 		"wait": return {"type": "wait", "seconds": float(name)}
 		"mood": return {"type": "mood", "name": name}
+		"grade": return {"type": "grade", "name": name}
 		"sfx": return {"type": "sfx", "name": name, "offset": offset}
 		"ambience": return {"type": "ambience", "name": name, "action": action if action else "start"}
 		"music": return {"type": "music", "name": name, "action": action if action else "start"}

@@ -22,5 +22,10 @@ extends Resource
 ## Expressiveness/variation; Piper's default is 0.667. Lower = flatter/colder.
 @export var voice_noise_scale: float = 0.667
 
+@export_group("Cinematography")
+## Name of a Grade preset this mood implies. "" = neutral. Overridable by scene {grade:}
+## or a [grade:] beat. See plan-moviemaking.md.
+@export var grade: String = ""
+
 func has_bg() -> bool:
 	return bg_color.a > 0.0
