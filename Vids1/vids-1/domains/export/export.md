@@ -15,6 +15,12 @@ godot --path . --fixed-fps 30 --write-movie out.avi res://scenes/main.tscn -- --
 ffmpeg -i out.avi -c:v libx264 -pix_fmt yuv420p -c:a aac out.mp4
 ```
 
+**Always transcode to MP4 for playback.** Godot's built-in writer only emits MJPEG AVI, which
+many players (and most browsers) decode partially — the video looks like it "stops at the
+beginning" even though every frame is present. H.264 MP4 plays everywhere. The Studio dock does
+this automatically after each render when `ffmpeg` is on `PATH` (falls back to keeping the AVI
+if not), so dock renders land as `.mp4`.
+
 Optional user flags after `--`: `--episode res://episodes/<name>.md` (which script),
 `--language <code>` (fallback language below the script's own `language:`), `--mood <name>`
 and `--style <name>` (fallbacks below the script's own `mood:`/`style:`). The Studio dock

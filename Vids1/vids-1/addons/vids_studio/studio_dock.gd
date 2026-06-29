@@ -14,6 +14,8 @@ var _render_pid: int = -1
 var _render_target: EpisodeRef = null
 var _queue: Array = []
 var _poll: Timer
+var _ffmpeg_checked := false
+var _ffmpeg_ok := false
 
 func _enter_tree() -> void:
 	_build_ui()
@@ -152,6 +154,8 @@ func _check_render() -> void:
 	_render_pid = -1
 	_clear_override()
 	if _render_target:
+		# Godot's MJPEG AVI plays poorly in many players; transcode to MP4 when ffmpeg exists.
+		_render_target.last_output = _maybe_transcode(_render_target.last_output)
 		_render_target.status = "rendered"
 		_save_show()
 		_status.text = "Done: %s" % _render_target.last_output.get_file()
@@ -197,6 +201,34 @@ func _clear_override() -> void:
 	var p := ProjectSettings.globalize_path("res://override.cfg")
 	if FileAccess.file_exists(p):
 		DirAccess.remove_absolute(p)
+
+# --- transcode ---
+
+# AVI(MJPEG) -> MP4(H.264) so the output plays in every player/browser.
+# No-op (returns the AVI) when ffmpeg isn't on PATH, so renders still succeed.
+func _maybe_transcode(avi_path: String) -> String:
+	if avi_path == "" or not FileAccess.file_exists(avi_path):
+		return avi_path
+	if avi_path.get_extension().to_lower() != "avi":
+		return avi_path
+	if not _ffmpeg_available():
+		return avi_path
+	var mp4 := avi_path.get_basename() + ".mp4"
+	var out: Array = []
+	var code := OS.execute("ffmpeg", [
+		"-y", "-i", avi_path,
+		"-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac",
+		mp4], out, true)
+	if code == 0 and FileAccess.file_exists(mp4):
+		DirAccess.remove_absolute(avi_path)  # keep just the playable one
+		return mp4
+	return avi_path  # leave the AVI if transcode failed
+
+func _ffmpeg_available() -> bool:
+	if not _ffmpeg_checked:
+		_ffmpeg_checked = true
+		_ffmpeg_ok = OS.execute("ffmpeg", ["-version"]) == 0
+	return _ffmpeg_ok
 
 func _selected_episode() -> EpisodeRef:
 	var item := _tree.get_selected()
