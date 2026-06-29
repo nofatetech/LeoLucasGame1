@@ -21,7 +21,8 @@ func run() -> void:
 	# Spawn after the first frame: adding to Main during _ready() trips Godot's
 	# "parent busy setting up children" guard and the nodes never enter the tree.
 	await get_tree().process_frame
-	var script := ScriptParser.parse_file(episode_path)
+	var path := _resolve_episode_path()
+	var script := ScriptParser.parse_file(path)
 	Log.info("Playing '%s' (%d beats)" % [script.title, script.beats.size()], "Director")
 	_build_cast(script)
 	await get_tree().process_frame   # let characters' _ready run
@@ -83,6 +84,15 @@ func _spread(n: int) -> Array:
 	for i in n:
 		out.append(left + (right - left) * float(i) / float(n - 1))
 	return out
+
+## Episode to play: the exported default, overridable at render time with
+## `-- --episode res://episodes/<name>.md` (no code edit needed).
+func _resolve_episode_path() -> String:
+	var uargs := OS.get_cmdline_user_args()
+	var i := uargs.find("--episode")
+	if i != -1 and i + 1 < uargs.size():
+		return uargs[i + 1]
+	return episode_path
 
 func _set_subtitle(speaker: String, text: String) -> void:
 	var label := get_node_or_null("%Subtitle") as Label
