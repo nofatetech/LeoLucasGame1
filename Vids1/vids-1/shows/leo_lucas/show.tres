@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="Show" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://domains/show/show.gd" id="1_show"]
+[ext_resource type="Script" path="res://domains/show/season.gd" id="2_season"]
+[ext_resource type="Script" path="res://domains/show/episode_ref.gd" id="3_ep"]
+
+[sub_resource type="Resource" id="ep_cookie"]
+script = ExtResource("3_ep")
+title = "The Last Cookie"
+number = 1
+md_path = "res://episodes/cookie.md"
+language = ""
+status = ""
+last_output = ""
+
+[sub_resource type="Resource" id="ep_cow"]
+script = ExtResource("3_ep")
+title = "La vaca que interrumpe"
+number = 2
+md_path = "res://episodes/cow.md"
+language = "es"
+status = ""
+last_output = ""
+
+[sub_resource type="Resource" id="season_1"]
+script = ExtResource("2_season")
+title = "Season 1"
+number = 1
+language = ""
+episodes = [SubResource("ep_cookie"), SubResource("ep_cow")]
+
+[resource]
+script = ExtResource("1_show")
+title = "Leo & Lucas"
+default_language = "es"
+fps = 30
+resolution = Vector2i(1280, 720)
+output_dir = "res://output"
+seasons = [SubResource("season_1")]

@@ -109,10 +109,16 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
 - [ ] Multi-speaker overlap / crosstalk
 - [ ] Per-character voice tuning, music ducking envelopes
 
-### M5 — Studio panel + series structure  ⬜  (plan: [`plan-studio-panel.md`](plan-studio-panel.md))
-- [ ] `Show`/`Season`/`EpisodeRef` resources; defaults trickle down
-- [ ] Editor dock: browse shows/episodes, edit params, Preview/Render/Render-all, outputs
-- [ ] Show/season levels join the language resolution chain
+### M5 — Studio panel + series structure  🟡 core done  (plan: [`plan-studio-panel.md`](plan-studio-panel.md))
+- [x] `Show`/`Season`/`EpisodeRef` resources (`domains/show/`) + `shows/leo_lucas/show.tres`
+- [x] Editor dock (`addons/vids_studio/`): browse the season/episode tree, Preview / Render /
+      Render-all / Open-output; render status persists back to the `.tres`
+- [x] Verified: editor mounts the plugin cleanly; the dock's render command produces
+      `output/cow.avi` (it shells out to the same CLI we use by hand)
+- [ ] Remaining: inline param editing in the dock (use the Inspector on `show.tres` for now);
+      wire show/season `language` into the Director's resolution chain (needs the episode's
+      show context — episode `language:` covers it today); in-editor click-through QA
+- **Note:** verified headlessly (load + render path); give the buttons a click in the editor.
 
 ### M6 — Localization output  ⬜
 - [ ] Per-language `.srt` captions as a render byproduct
@@ -155,7 +161,15 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
   normalizes all directives to beat-shaped events; inline directives on a dialogue line fire
   at line start, standalone ones ride the playhead. Placeholder audio is deterministic
   procedural synth (no `randf()`), names resolve to real files later. `cow.md` verified with
-  ambience+music+sfx, ducked, no warnings. **Next: M5 (studio panel) or M6 (.srt + variants).**
+  ambience+music+sfx, ducked, no warnings.
+- **2026-06-28** — **M5 core.** `Show`/`Season`/`EpisodeRef` resources (`domains/show/`) +
+  `shows/leo_lucas/show.tres` (Season 1: cookie, cow). Studio editor dock
+  (`addons/vids_studio/`, enabled in project.godot): season/episode tree with
+  Preview/Render/Render-all/Open-output; render shells out to the same CLI via
+  `OS.create_process`, polls the PID, persists `status=rendered` back to the `.tres`. Verified
+  headlessly — editor mounts the plugin clean, show.tres deserializes, dock render command
+  produces `output/cow.avi`. Remaining: in-dock param editing + show/season into the language
+  chain + click-through QA. **Next: M6 (.srt captions + per-language variant renders).**
 
 ---
 
