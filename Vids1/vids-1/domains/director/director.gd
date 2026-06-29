@@ -164,7 +164,7 @@ func _set_bg(color: Color) -> void:
 		create_tween().tween_property(bg, "color", color, 0.4)
 
 func _background() -> ColorRect:
-	return get_parent().get_node_or_null("Background") as ColorRect
+	return get_parent().get_node_or_null("Stage/Background") as ColorRect
 
 # --- style (render look: resolution + post shader) ---
 
@@ -255,19 +255,56 @@ func _stop_all_spans() -> void:
 		p.queue_free()
 	_spans.clear()
 
+# A character is drawn feet-at-origin and stands ~224px tall, ~58px half-wide at scale 1.
+# Tune these if you redraw the cast; the composition math derives everything from them.
+const _CHAR_NATIVE_H := 224.0
+const _CHAR_NATIVE_HALFW := 58.0
+
 func _build_cast(script: EpisodeScript) -> void:
 	# Spawn each speaking character once, spread across the stage in first-seen order.
-	# Positions/scale derive from the viewport so any aspect (wide/vertical/square) adapts.
+	# The composition is aspect-aware so wide / square / vertical each frame the cast well
+	# instead of the naive min-scale that left tall frames mostly empty.
 	var vp := _viewport_size()
-	var ground := vp.y * 0.66
-	var scale := minf(vp.x / 1280.0, vp.y / 720.0)
+	var portrait := (vp.x / vp.y) < 0.9
+
 	var ids := []
 	for beat in script.beats:
 		if beat.get("type") == "say" and not ids.has(beat.speaker):
 			ids.append(beat.speaker)
+
+	# Target the cast at a fraction of frame height (taller fill for vertical), then derive scale.
+	var target_h := (0.36 if portrait else 0.31) * vp.y
+	var scale := target_h / _CHAR_NATIVE_H
+	# Cap so neighbours never collide: bound by the horizontal slot between adjacent positions.
+	if ids.size() > 1:
+		var slot := (0.72 - 0.28) * vp.x / float(ids.size() - 1)
+		scale = minf(scale, slot / (2.0 * _CHAR_NATIVE_HALFW * 1.1))
+
+	# Centre the cast band vertically (slightly high on vertical to leave subtitle room),
+	# then place feet = centre + half the character's height.
+	var center_frac := 0.46 if portrait else 0.50
+	var ground := center_frac * vp.y + (_CHAR_NATIVE_H * scale) * 0.5
+
+	_layout_stage(vp, portrait, ground)
+
 	var xs := _spread(ids.size(), vp.x)
 	for idx in ids.size():
 		_spawn(ids[idx], Vector2(xs[idx], ground), scale)
+
+# Snap the grass line to where the cast actually stands, and size the subtitle band for the
+# aspect — small fixed text looked lost on tall/large frames.
+func _layout_stage(vp: Vector2, portrait: bool, ground: float) -> void:
+	var grass := get_parent().get_node_or_null("Stage/Ground") as Control
+	if grass:
+		grass.anchor_top = ground / vp.y
+		grass.offset_top = 0.0
+	var label := get_node_or_null("%Subtitle") as Label
+	if label:
+		var font := int(roundf(vp.x * (0.052 if portrait else 0.030)))
+		font = clampi(font, 30, 72)
+		label.add_theme_font_size_override("font_size", font)
+		label.offset_top = -(font * 2.6 + 16.0)   # room for up to ~2 wrapped lines
+		label.offset_bottom = -16.0
 
 func _spawn(id: String, pos: Vector2, scale: float) -> void:
 	var c := CastRegistry.create(id)
