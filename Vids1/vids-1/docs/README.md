@@ -159,6 +159,18 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
 - [ ] **PD content pack** (`aesop` universe + `fable` format)
 - [ ] **Archetypes** (show presets: sitcom / storytime / news-desk)
 
+### M10 — Moviemaking (cinematography)  ⬜  (plan: [`plan-moviemaking.md`](plan-moviemaking.md))
+Make the flat shows look *shot, not drawn* — a staging layer the Director drives from markdown,
+deterministic, no engine fork. **Auto + override**; keep it simple, ship per slice.
+- [ ] **Slice A — Light & color grade** (`Grade`/`GradeLibrary` + `grade.gdshader`: tint /
+      contrast / vignette / directional gradient / frame-index grain; wired to mood + `[grade:]`)
+- [ ] **Slice B — Camera & framing** (`Camera2D` + `Shot` presets + auto-frame speaker + moves)
+- [ ] **Slice C — Depth & composition** (parallax bg layers + rule-of-thirds placement)
+- [ ] **Phase 2 (optional)** — character rig: blink / breathe first; brows / look-at / gesture later
+- Assets are **format-agnostic**: cast/props/bg may be flat `Polygon2D`, **SVG**, or **bitmap**
+  (PNG/JPG/WebP) or a mix — the `Character` contract is shape-agnostic. Ours-by-default for
+  coherence; CC0 packs supported; bake assets + licenses into the repo (no fetch at render).
+
 ### M8 — Story graph (multi-path stories)  ⬜  (research done; see progress log)
 Prior art: Ink/Twine/Yarn for authoring; formal models (choices-as-edges/nodes, hypertext,
 storylets/quality-based, character supernodes). Maps cleanly onto us:
@@ -257,6 +269,12 @@ storylets/quality-based, character supernodes). Maps cleanly onto us:
   Wrote the real **Vids1 self-promo** (`episodes/promo_vids1.md`, vertical, mood shifts + sfx +
   music) — dogfoods the promo format and is a usable marketing asset. Verified it renders.
   **Next M9 slices: Obsidian conventions, PD content pack (`aesop` + `fable`), archetypes.**
+- **2026-06-28** — **Planned M10 — Moviemaking (cinematography)** (`plan-moviemaking.md`). A
+  deterministic **staging layer** the Director drives from markdown (auto + override): grade +
+  light, then camera/framing, then depth — flat shapes shot, not drawn. Decided assets are
+  **format-agnostic** (flat `Polygon2D` / **SVG** / **bitmap** PNG-JPG-WebP, freely mixed — the
+  `Character` contract is shape-agnostic); ours-by-default for coherence, CC0 packs supported,
+  baked into the repo. Character richness deferred (optional). **Build first: Slice A — grade.**
 
 ---
 
