@@ -8,3 +8,6 @@
 
 # Transient per-render project-setting override (resolution/aspect)
 override.cfg
+
+# Obsidian per-machine workspace state
+.obsidian/

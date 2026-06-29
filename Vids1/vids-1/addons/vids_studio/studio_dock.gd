@@ -16,6 +16,8 @@ var _queue: Array = []
 var _poll: Timer
 var _ffmpeg_checked := false
 var _ffmpeg_ok := false
+var _new_menu: PopupMenu
+var _template_paths: Array = []
 
 func _enter_tree() -> void:
 	_build_ui()
@@ -41,6 +43,7 @@ func _build_ui() -> void:
 
 	var actions := HBoxContainer.new()
 	add_child(actions)
+	_add_button(actions, "New…", _on_new_from_template)
 	_add_button(actions, "Preview", _on_preview)
 	_add_button(actions, "Render", _on_render)
 	_add_button(actions, "Render all", _on_render_all)
@@ -116,6 +119,75 @@ func _on_open_output() -> void:
 		var dir := ProjectSettings.globalize_path(_show.output_dir)
 		DirAccess.make_dir_recursive_absolute(dir)
 		OS.shell_open(dir)
+
+# --- new from template ---
+
+# Pop a menu of the format skeletons in templates/episodes/; choosing one copies it into
+# episodes/ and registers an EpisodeRef so it shows in the tree, ready to edit + render.
+func _on_new_from_template() -> void:
+	_template_paths = _list_templates()
+	if _template_paths.is_empty():
+		_status.text = "No templates in res://templates/episodes/"
+		return
+	if _show == null:
+		_status.text = "Load a Show first (none under res://shows/)"
+		return
+	if _new_menu == null:
+		_new_menu = PopupMenu.new()
+		_new_menu.id_pressed.connect(_create_from_template)
+		add_child(_new_menu)
+	_new_menu.clear()
+	for idx in _template_paths.size():
+		_new_menu.add_item(_template_paths[idx].get_file().get_basename().capitalize(), idx)
+	_new_menu.reset_size()
+	_new_menu.popup(Rect2i(DisplayServer.mouse_get_position(), Vector2i.ZERO))
+
+func _create_from_template(idx: int) -> void:
+	var src: String = _template_paths[idx]
+	var format := src.get_file().get_basename()
+	# Pick a unique destination so repeated "New" calls never clobber an existing episode.
+	var dest := "res://episodes/new_%s.md" % format
+	var n := 2
+	while FileAccess.file_exists(dest):
+		dest = "res://episodes/new_%s_%d.md" % [format, n]
+		n += 1
+	var f := FileAccess.open(dest, FileAccess.WRITE)
+	if f == null:
+		_status.text = "Could not write " + dest
+		return
+	f.store_string(FileAccess.get_file_as_string(src))
+	f.close()
+	var season = _show.seasons[0] if not _show.seasons.is_empty() else _new_season()
+	var ep := EpisodeRef.new()
+	ep.md_path = dest
+	ep.title = "New %s" % format.capitalize()
+	ep.number = season.episodes.size() + 1
+	season.episodes.append(ep)
+	_save_show()
+	_reload()
+	_status.text = "Created %s — edit it, then Render" % dest.get_file()
+
+func _new_season() -> Season:
+	var s := Season.new()
+	s.title = "Season 1"
+	_show.seasons.append(s)
+	return s
+
+func _list_templates() -> Array:
+	var out := []
+	var dir := "res://templates/episodes"
+	var d := DirAccess.open(dir)
+	if d == null:
+		return out
+	d.list_dir_begin()
+	var name := d.get_next()
+	while name != "":
+		if not d.current_is_dir() and name.ends_with(".md") and name != "README.md":
+			out.append(dir.path_join(name))
+		name = d.get_next()
+	d.list_dir_end()
+	out.sort()
+	return out
 
 # --- render plumbing ---
 

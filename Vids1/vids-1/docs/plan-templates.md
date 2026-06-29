@@ -69,8 +69,9 @@ the brain. This likely replaces the dock's planned browse/manage/graph UI.
 
 ## Build sequence
 
-1. **Style layer** ← first (anaglyph + aspect + responsive layout; `Style`/`StyleLibrary`).
-2. **Format skeletons** + "new from template" + the Vids1 self-promo.
-3. **Obsidian conventions** (wikilink cast refs, Dataview starters, vault README).
+1. ~~**Style layer** (anaglyph + aspect + responsive layout; `Style`/`StyleLibrary`).~~ ✅
+2. ~~**Format skeletons** + "new from template" + the Vids1 self-promo.~~ ✅
+   `templates/episodes/{promo,fable,interview}.md`; dock **"New…"**; `episodes/promo_vids1.md`.
+3. **Obsidian conventions** (wikilink cast refs, Dataview starters, vault README). ← next
 4. **PD content pack** (`aesop` universe + `fable` format + a sample fable).
 5. **Archetypes** (show presets) — last, once the others exist to bundle.

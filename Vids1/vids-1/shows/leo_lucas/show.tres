@@ -20,10 +20,18 @@ language = "es"
 status = "rendered"
 last_output = "/home/user1/dev/LeoLucasGame1/gitrepo_LeoLucasGame1/Vids1/vids-1/output/cow.avi"
 
+[sub_resource type="Resource" id="ep_promo"]
+script = ExtResource("3_ep")
+title = "Vids1 — Make Videos from Markdown"
+number = 3
+md_path = "res://episodes/promo_vids1.md"
+language = "en"
+style = "vertical"
+
 [sub_resource type="Resource" id="season_1"]
 script = ExtResource("2_season")
 title = "Season 1"
-episodes = [SubResource("ep_cookie"), SubResource("ep_cow")]
+episodes = [SubResource("ep_cookie"), SubResource("ep_cow"), SubResource("ep_promo")]
 
 [resource]
 script = ExtResource("1_show")

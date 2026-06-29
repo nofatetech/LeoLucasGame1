@@ -143,7 +143,7 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
 - [ ] Next: **Movie** production type; episode/show **templates**; story stages + outline;
       dock Universe/Characters tabs + auto-derived character history
 
-### M9 — Templates (four axes)  🟡 style done  (plan: [`plan-templates.md`](plan-templates.md))
+### M9 — Templates (four axes)  🟡 style + formats done  (plan: [`plan-templates.md`](plan-templates.md))
 "Template" = four composable axes: **format** (story skeleton), **style** (render look),
 **content pack** (PD universe), **archetype** (show preset). Obsidian-first management.
 - [x] **Style layer** (`domains/style/`): `Style`/`StyleLibrary`, resolved episode `style:` →
@@ -151,7 +151,10 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
       (`anaglyph`/`bw`/`crt`). Responsive scene layout. Resolution via `override.cfg`
       (dock-managed, since Movie Maker bakes the viewport size). Verified: vertical → a true
       1080×1920 AVI; anaglyph shader renders.
-- [ ] **Format skeletons** (`templates/episodes/*.md`) + "new from template" + a Vids1 self-promo
+- [x] **Format skeletons** (`templates/episodes/*.md`): `promo` / `fable` / `interview`
+      skeletons (parser-valid, `#` comment guidance, `{{...}}` fill-ins). Dock **"New…"** copies
+      a template into `episodes/` and registers an `EpisodeRef`. Real **Vids1 self-promo**
+      (`episodes/promo_vids1.md`, vertical) dogfoods the promo format — verified renders.
 - [ ] **Obsidian conventions** (wikilink cast refs, Dataview starters, vault) — Obsidian-first
 - [ ] **PD content pack** (`aesop` universe + `fable` format)
 - [ ] **Archetypes** (show presets: sitcom / storytime / news-desk)
@@ -240,6 +243,20 @@ storylets/quality-based, character supernodes). Maps cleanly onto us:
   from `override.cfg` (proved: vertical → real 1080×1920 AVI; the dock writes/cleans it around a
   render). Anaglyph shader verified rendering. Show/EpisodeRef got a `style` field.
   **Next M9 slices: format skeletons + Vids1 promo, Obsidian conventions, PD pack.**
+- **2026-06-28** — **Composition + background fix.** Made the cast composition **aspect-aware**
+  (target-height scale, vertically-centred band, grass line snaps to the feet, subtitle scales) so
+  vertical/square/wide all frame well — vertical was previously tiny + lower-middle. Found a
+  long-standing bug: Background/Ground `ColorRect`s were children of the Node2D root, so their
+  Control anchors never resolved and **every render had no sky/grass** (flat default field). Moved
+  them under a `CanvasLayer` (like the Subtitle) — fixed in all aspects. Dock now **auto-transcodes
+  AVI→MP4** (H.264) after each render when ffmpeg is present (Godot's MJPEG AVI plays only
+  partially in many players — the "renders just the beginning" report).
+- **2026-06-28** — **Templates: format skeletons (M9, slice 2).** Added `templates/episodes/`
+  with `promo` / `fable` / `interview` parser-valid skeletons (`#` comment guidance + `{{...}}`
+  fill-ins). Dock **"New…"** copies a template into `episodes/` and registers an `EpisodeRef`.
+  Wrote the real **Vids1 self-promo** (`episodes/promo_vids1.md`, vertical, mood shifts + sfx +
+  music) — dogfoods the promo format and is a usable marketing asset. Verified it renders.
+  **Next M9 slices: Obsidian conventions, PD content pack (`aesop` + `fable`), archetypes.**
 
 ---
 
