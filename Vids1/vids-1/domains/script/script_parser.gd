@@ -149,6 +149,7 @@ static func _parse_front_line(raw: String, ep: EpisodeScript) -> void:
 		"title": ep.title = _unquote(val)
 		"language": ep.language = _unquote(val)
 		"mood": ep.mood = _unquote(val)
+		"style": ep.style = _unquote(val)
 		"cast": ep.cast = _parse_inline_map(val)
 
 static func _parse_inline_map(val: String) -> Dictionary:

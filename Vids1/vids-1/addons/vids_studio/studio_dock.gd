@@ -84,9 +84,11 @@ func _on_preview() -> void:
 	var ep := _selected_episode()
 	if ep == null:
 		return
+	# Preview shows shaders at the default window size (resolution/aspect is a render-time concern).
 	OS.create_process(_godot_bin(), [
 		"--path", _project_dir(), MAIN_SCENE,
-		"--", "--episode", ep.md_path, "--language", _structural_language(ep)])
+		"--", "--episode", ep.md_path, "--language", _structural_language(ep),
+		"--style", _structural_style(ep)])
 	_status.text = "Preview: %s" % ep.title
 
 func _on_render() -> void:
@@ -122,12 +124,15 @@ func _render_one(ep: EpisodeRef) -> void:
 	var out_dir := ProjectSettings.globalize_path(_show.output_dir)
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	var out := out_dir.path_join(ep.md_path.get_file().get_basename() + ".avi")
+	var style := _structural_style(ep)
+	_write_override(style)   # resolution is baked at launch via override.cfg
 	var args := [
 		"--path", _project_dir(),
 		"--fixed-fps", str(_show.fps),
 		"--write-movie", out,
 		MAIN_SCENE,
-		"--", "--render", "--episode", ep.md_path, "--language", _structural_language(ep)]
+		"--", "--render", "--episode", ep.md_path,
+		"--language", _structural_language(ep), "--style", style]
 	_render_pid = OS.create_process(_godot_bin(), args)
 	if _render_pid <= 0:
 		_status.text = "Failed to launch render"
@@ -145,6 +150,7 @@ func _check_render() -> void:
 		return
 	# finished
 	_render_pid = -1
+	_clear_override()
 	if _render_target:
 		_render_target.status = "rendered"
 		_save_show()
@@ -170,6 +176,27 @@ func _structural_language(ep: EpisodeRef) -> String:
 		if season.episodes.has(ep):
 			return season.language if season.language != "" else _show.default_language
 	return _show.default_language
+
+# Render style: episode override else show default.
+func _structural_style(ep: EpisodeRef) -> String:
+	return ep.style if ep.style != "" else _show.style
+
+# Movie Maker bakes the project viewport size at launch, so a non-default resolution must
+# come from override.cfg (written before launch, removed when the render finishes).
+func _write_override(style_name: String) -> void:
+	var s := StyleLibrary.get_style(style_name)
+	if s == null or not s.has_resolution():
+		return
+	var f := FileAccess.open("res://override.cfg", FileAccess.WRITE)
+	if f:
+		f.store_string("[display]\n\nwindow/size/viewport_width=%d\nwindow/size/viewport_height=%d\n" % [
+			s.resolution.x, s.resolution.y])
+		f.close()
+
+func _clear_override() -> void:
+	var p := ProjectSettings.globalize_path("res://override.cfg")
+	if FileAccess.file_exists(p):
+		DirAccess.remove_absolute(p)
 
 func _selected_episode() -> EpisodeRef:
 	var item := _tree.get_selected()

@@ -54,6 +54,7 @@ vids-1/
     show/                Show / Season / EpisodeRef resources
     universe/            Universe resource
     mood/                Mood resource + MoodLibrary (presets)
+    style/               Style + StyleLibrary + shaders/ (anaglyph/bw/crt)
   universes/<id>/        characters/<id>.tscn (+ universe.tres) — reusable cast
   shows/<id>/            show.tres
   episodes/              the .md scripts (cookie.md, cow.md)
@@ -142,6 +143,19 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
 - [ ] Next: **Movie** production type; episode/show **templates**; story stages + outline;
       dock Universe/Characters tabs + auto-derived character history
 
+### M9 — Templates (four axes)  🟡 style done  (plan: [`plan-templates.md`](plan-templates.md))
+"Template" = four composable axes: **format** (story skeleton), **style** (render look),
+**content pack** (PD universe), **archetype** (show preset). Obsidian-first management.
+- [x] **Style layer** (`domains/style/`): `Style`/`StyleLibrary`, resolved episode `style:` →
+      `--style` → none. Aspect presets (`wide`/`vertical` 9:16/`square`) + post shaders
+      (`anaglyph`/`bw`/`crt`). Responsive scene layout. Resolution via `override.cfg`
+      (dock-managed, since Movie Maker bakes the viewport size). Verified: vertical → a true
+      1080×1920 AVI; anaglyph shader renders.
+- [ ] **Format skeletons** (`templates/episodes/*.md`) + "new from template" + a Vids1 self-promo
+- [ ] **Obsidian conventions** (wikilink cast refs, Dataview starters, vault) — Obsidian-first
+- [ ] **PD content pack** (`aesop` universe + `fable` format)
+- [ ] **Archetypes** (show presets: sitcom / storytime / news-desk)
+
 ### M8 — Story graph (multi-path stories)  ⬜  (research done; see progress log)
 Prior art: Ink/Twine/Yarn for authoring; formal models (choices-as-edges/nodes, hypertext,
 storylets/quality-based, character supernodes). Maps cleanly onto us:
@@ -217,7 +231,15 @@ storylets/quality-based, character supernodes). Maps cleanly onto us:
   `MoodLibrary` has built-ins (happy/tense/calm/spooky/manic) overridable via
   `universes/<u>/moods/*.tres`. Parser now stamps scene+mood on every beat; `Tts.synth` takes
   delivery params (cache key includes them). Verified: cookie `{mood: tense}` → slower/flatter
-  speech + dim bg. **Next: Movie production type, or templates.**
+  speech + dim bg.
+- **2026-06-28** — **Templates: style layer (M9, slice 1).** Brainstormed the four template axes
+  (format/style/content-pack/archetype) + **Obsidian-first** management (`plan-templates.md`).
+  Built the **style** axis: `domains/style/` (`Style`/`StyleLibrary` + `anaglyph`/`bw`/`crt`
+  shaders), resolved `style:` → `--style`. Made the scene layout **responsive** (positions/scale
+  from viewport). Discovered Movie Maker bakes the project viewport size → resolution must come
+  from `override.cfg` (proved: vertical → real 1080×1920 AVI; the dock writes/cleans it around a
+  render). Anaglyph shader verified rendering. Show/EpisodeRef got a `style` field.
+  **Next M9 slices: format skeletons + Vids1 promo, Obsidian conventions, PD pack.**
 
 ---
 

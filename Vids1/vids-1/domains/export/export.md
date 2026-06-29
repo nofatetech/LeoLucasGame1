@@ -15,9 +15,24 @@ godot --path . --fixed-fps 30 --write-movie out.avi res://scenes/main.tscn -- --
 ffmpeg -i out.avi -c:v libx264 -pix_fmt yuv420p -c:a aac out.mp4
 ```
 
-Optional user flags after `--`: `--episode res://episodes/<name>.md` (which script) and
-`--language <code>` (fallback language below the script's own `language:` — the Studio dock
-passes the show/season default here).
+Optional user flags after `--`: `--episode res://episodes/<name>.md` (which script),
+`--language <code>` (fallback language below the script's own `language:`), `--mood <name>`
+and `--style <name>` (fallbacks below the script's own `mood:`/`style:`). The Studio dock
+passes the resolved show/season defaults here.
+
+**Resolution / aspect (vertical Shorts, square):** Movie Maker bakes the project viewport
+size at launch, so a non-default resolution can't be set at runtime — it must come from an
+`override.cfg` written before launch. The Studio dock does this automatically for styles with
+a resolution (e.g. `vertical` 1080×1920). To do it by hand:
+
+```bash
+printf '[display]\n\nwindow/size/viewport_width=1080\nwindow/size/viewport_height=1920\n' > override.cfg
+godot --path . --fixed-fps 30 --write-movie out.avi res://scenes/main.tscn -- --render --episode res://episodes/cow.md
+rm override.cfg
+```
+
+Post shaders (`anaglyph`/`bw`/`crt`) are applied at runtime and need no override — just
+`--style anaglyph`. The scene layout is responsive, so it adapts to whatever resolution.
 
 The Director quits automatically when `--render` is passed (it checks
 `OS.get_cmdline_user_args()` — args after `--`, which the engine always preserves). Quitting is

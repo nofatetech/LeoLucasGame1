@@ -10,7 +10,6 @@ extends Node
 const SECS_PER_CHAR := 0.06
 const MIN_BEAT := 0.8
 const BEAT_GAP := 0.25
-const GROUND_Y := 470.0
 const DEFAULT_LANGUAGE := "en"   # bottom of the language resolution chain
 
 ## Music mixing: base level, and how far to duck while someone is speaking.
@@ -32,26 +31,34 @@ var _voice_length := 1.0
 var _voice_noise := 0.667
 var _default_bg := Color(0.53, 0.81, 0.92)
 
+# Style state (render look: resolution + post shader), resolved once per render.
+var _episode_style := ""
+var _fallback_style := ""
+
 func _ready() -> void:
 	run()
 
 func run() -> void:
-	# Spawn after the first frame: adding to Main during _ready() trips Godot's
-	# "parent busy setting up children" guard and the nodes never enter the tree.
-	await get_tree().process_frame
 	var path := _resolve_episode_path()
 	_fallback_language = _cmdline_value("--language")
 	_fallback_mood = _cmdline_value("--mood")
+	_fallback_style = _cmdline_value("--style")
 	var bg := _background()
 	if bg:
 		_default_bg = bg.color
 	var script := ScriptParser.parse_file(path)
 	_episode_language = script.language
 	_episode_mood = script.mood
+	_episode_style = script.style
+	# Apply style (resolution + post shader) BEFORE the first recorded frame.
+	_apply_style(_resolve_style_name())
 	Log.info("Playing '%s' (%d beats, lang=%s, tts=%s)" % [
 		script.title, script.beats.size(),
 		_episode_language if _episode_language else "(default)",
 		"on" if Tts.available() else "off (tone)"], "Director")
+	# Spawn after the first frame: adding to Main during _ready() trips Godot's
+	# "parent busy setting up children" guard and the nodes never enter the tree.
+	await get_tree().process_frame
 	_build_cast(script)
 	await get_tree().process_frame   # let characters' _ready run
 
@@ -159,6 +166,47 @@ func _set_bg(color: Color) -> void:
 func _background() -> ColorRect:
 	return get_parent().get_node_or_null("Background") as ColorRect
 
+# --- style (render look: resolution + post shader) ---
+
+## Style name, most specific first: episode style: -> --style -> none.
+func _resolve_style_name() -> String:
+	if _episode_style != "":
+		return _episode_style
+	return _fallback_style
+
+func _apply_style(name: String) -> void:
+	var s := StyleLibrary.get_style(name)
+	if s == null:
+		return
+	# Resolution must be set at launch (Movie Maker bakes the project viewport size). The
+	# Studio dock / render CLI writes override.cfg; here we just verify and adapt the layout.
+	if s.has_resolution():
+		var vp := Vector2i(_viewport_size())
+		if vp == s.resolution:
+			Log.info("Style: %s (%dx%d)" % [name, vp.x, vp.y], "Director")
+		else:
+			Log.warning("Style '%s' wants %dx%d but viewport is %dx%d — set via the dock or override.cfg" % [
+				name, s.resolution.x, s.resolution.y, vp.x, vp.y], "Director")
+	if s.shader != "":
+		_add_post_shader(s.shader)
+		Log.info("Style shader: %s" % s.shader, "Director")
+
+func _add_post_shader(shader_name: String) -> void:
+	var path := "res://domains/style/shaders/%s.gdshader" % shader_name
+	if not ResourceLoader.exists(path):
+		Log.warning("No shader '%s'" % shader_name, "Director")
+		return
+	var mat := ShaderMaterial.new()
+	mat.shader = load(path)
+	var rect := ColorRect.new()
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.material = mat
+	var layer := CanvasLayer.new()
+	layer.layer = 100   # above scene + subtitles
+	layer.add_child(rect)
+	add_child(layer)
+
 # --- audio events (Point: sfx; Span: ambience/music) ---
 
 func _fire_event(ev: Dictionary) -> void:
@@ -208,34 +256,42 @@ func _stop_all_spans() -> void:
 	_spans.clear()
 
 func _build_cast(script: EpisodeScript) -> void:
-	# Spawn each speaking character once, spread evenly across the stage in first-seen order.
+	# Spawn each speaking character once, spread across the stage in first-seen order.
+	# Positions/scale derive from the viewport so any aspect (wide/vertical/square) adapts.
+	var vp := _viewport_size()
+	var ground := vp.y * 0.66
+	var scale := minf(vp.x / 1280.0, vp.y / 720.0)
 	var ids := []
 	for beat in script.beats:
 		if beat.get("type") == "say" and not ids.has(beat.speaker):
 			ids.append(beat.speaker)
-	var xs := _spread(ids.size())
+	var xs := _spread(ids.size(), vp.x)
 	for idx in ids.size():
-		_spawn(ids[idx], Vector2(xs[idx], GROUND_Y))
+		_spawn(ids[idx], Vector2(xs[idx], ground), scale)
 
-func _spawn(id: String, pos: Vector2) -> void:
+func _spawn(id: String, pos: Vector2, scale: float) -> void:
 	var c := CastRegistry.create(id)
 	if c == null:
 		Log.error("Unknown cast id: " + id, "Director")
 		return
 	c.position = pos
+	c.scale = Vector2.ONE * scale
 	add_sibling(c, true)   # sibling of Director -> child of Main, drawn above the ground
 	_cast[id] = c
 
-## Evenly spaced x positions across the stage for n characters.
-func _spread(n: int) -> Array:
+## Evenly spaced x positions across the stage width for n characters.
+func _spread(n: int, width: float) -> Array:
 	if n <= 1:
-		return [640.0]
-	var left := 380.0
-	var right := 900.0
+		return [width * 0.5]
+	var left := width * 0.28
+	var right := width * 0.72
 	var out := []
 	for i in n:
 		out.append(left + (right - left) * float(i) / float(n - 1))
 	return out
+
+func _viewport_size() -> Vector2:
+	return get_viewport().get_visible_rect().size
 
 ## Episode to play: the exported default, overridable at render time with
 ## `-- --episode res://episodes/<name>.md` (no code edit needed).

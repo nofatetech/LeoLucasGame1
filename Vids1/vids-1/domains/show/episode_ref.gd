@@ -8,5 +8,6 @@ extends Resource
 @export var number: int = 1
 @export_file("*.md") var md_path: String = ""
 @export var language: String = ""    # "" = inherit season/show
+@export var style: String = ""       # render style override ("" = inherit show)
 @export var status: String = ""      # "", "rendered"
 @export var last_output: String = "" # absolute path of last render

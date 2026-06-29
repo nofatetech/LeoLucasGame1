@@ -5,3 +5,6 @@
 # Rendered video output
 *.avi
 *.mp4
+
+# Transient per-render project-setting override (resolution/aspect)
+override.cfg
