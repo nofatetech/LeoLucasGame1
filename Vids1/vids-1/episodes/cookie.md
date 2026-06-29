@@ -5,7 +5,7 @@ language: en
 cast: { leo: leo, lucas: lucas }
 ---
 
-## Scene: kitchen — night
+## Scene: kitchen — night {mood: tense}
 
 leo: You took the last cookie.
 lucas: (whisper) Prove it.

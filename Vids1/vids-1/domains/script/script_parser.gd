@@ -25,25 +25,47 @@ static func parse_text(text: String) -> EpisodeScript:
 
 	# --- body ---
 	var scene := ""
+	var scene_mood := ""
 	while i < lines.size():
 		var line := lines[i].strip_edges()
 		i += 1
 		if line == "":
 			continue
 		if line.begins_with("## Scene:"):
-			scene = line.substr(9).strip_edges()
+			var parsed := _parse_scene_header(line.substr(9))
+			scene = parsed.name
+			scene_mood = parsed.mood
 			continue
 		if line.begins_with("#"):
 			continue                                  # heading / comment
+		var beats := []
 		if line.begins_with("["):
-			_parse_directive_line(line, ep)           # [wait] becomes a beat; others warn
-			continue
-		var colon := line.find(":")
-		if colon > 0:
-			_parse_dialogue(line, colon, scene, ep)
+			beats = _strip_directives(line).events    # directive-only line
+		else:
+			var colon := line.find(":")
+			if colon > 0:
+				beats = [_dialogue_beat(line, colon, ep)]
+		for b in beats:                               # stamp scene context on every beat
+			b["scene"] = scene
+			b["scene_mood"] = scene_mood
+			ep.beats.append(b)
 	return ep
 
-static func _parse_dialogue(line: String, colon: int, scene: String, ep: EpisodeScript) -> void:
+# "kitchen — night {mood: tense}" -> {name, mood}
+static func _parse_scene_header(s: String) -> Dictionary:
+	s = s.strip_edges()
+	var mood := ""
+	var b := s.find("{")
+	if b != -1:
+		var e := s.find("}", b)
+		if e != -1:
+			var ev := _normalize(s.substr(b + 1, e - b - 1))   # reuse {verb: args} parser
+			if ev.get("type") == "mood":
+				mood = ev.name
+			s = s.substr(0, b).strip_edges()
+	return {"name": s, "mood": mood}
+
+static func _dialogue_beat(line: String, colon: int, ep: EpisodeScript) -> Dictionary:
 	var alias := line.substr(0, colon).strip_edges()
 	var rest := line.substr(colon + 1).strip_edges()
 	# optional per-line language override: "leo@en: ..."
@@ -61,16 +83,11 @@ static func _parse_dialogue(line: String, colon: int, scene: String, ep: Episode
 		if close != -1:
 			emote = rest.substr(1, close - 1).strip_edges()
 			rest = rest.substr(close + 1).strip_edges()
-	ep.beats.append({
+	return {
 		"type": "say", "speaker": ep.resolve(alias),
-		"text": rest, "emote": emote, "lang": lang, "scene": scene,
+		"text": rest, "emote": emote, "lang": lang,
 		"directives": stripped.events,
-	})
-
-# Directive-only line: each [..] becomes its own beat at the current playhead.
-static func _parse_directive_line(line: String, ep: EpisodeScript) -> void:
-	for ev in _strip_directives(line).events:
-		ep.beats.append(ev)
+	}
 
 # Pull every [verb: args] out of text, returning the cleaned text plus normalized events.
 static func _strip_directives(text: String) -> Dictionary:
@@ -112,6 +129,7 @@ static func _normalize(inner: String) -> Dictionary:
 			name = tok
 	match verb:
 		"wait": return {"type": "wait", "seconds": float(name)}
+		"mood": return {"type": "mood", "name": name}
 		"sfx": return {"type": "sfx", "name": name, "offset": offset}
 		"ambience": return {"type": "ambience", "name": name, "action": action if action else "start"}
 		"music": return {"type": "music", "name": name, "action": action if action else "start"}
@@ -130,6 +148,7 @@ static func _parse_front_line(raw: String, ep: EpisodeScript) -> void:
 		"episode": ep.episode = _unquote(val)
 		"title": ep.title = _unquote(val)
 		"language": ep.language = _unquote(val)
+		"mood": ep.mood = _unquote(val)
 		"cast": ep.cast = _parse_inline_map(val)
 
 static func _parse_inline_map(val: String) -> Dictionary:

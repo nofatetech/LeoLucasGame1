@@ -53,6 +53,7 @@ vids-1/
     audio/               tts (Piper), tone, clip_amplitude, audio_library (sfx/music)
     show/                Show / Season / EpisodeRef resources
     universe/            Universe resource
+    mood/                Mood resource + MoodLibrary (presets)
   universes/<id>/        characters/<id>.tscn (+ universe.tres) — reusable cast
   shows/<id>/            show.tres
   episodes/              the .md scripts (cookie.md, cow.md)
@@ -133,9 +134,22 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
 - [x] `CharacterData` grew a **bible** (bio, personality, relationships, catchphrases, tags)
 - [x] `Universe` resource (`universes/leo_lucas/universe.tres`); `Show.universe` pointer
 - [x] Verified: cow renders unchanged via the dynamic registry (no behavior change)
-- [ ] Next: **moods** (trickle-down presets → music/ambience/bg + Piper voice speed/tone);
-      **Movie** production type; episode/show **templates**; story stages + outline; dock
-      Universe/Characters tabs + auto-derived character history
+- [x] **Moods** (`domains/mood/`): trickle-down preset resolved scene `{mood:x}` → episode
+      `mood:` → `--mood` → none. Controls **bg tint**, **pace** (beat gaps), and **voice
+      delivery** (Piper `length_scale`/`noise_scale`). Built-ins (happy/tense/calm/spooky/manic)
+      + `universes/<u>/moods/<id>.tres` overrides. Verified: cookie `{mood: tense}` → slower,
+      flatter speech + dim background.
+- [ ] Next: **Movie** production type; episode/show **templates**; story stages + outline;
+      dock Universe/Characters tabs + auto-derived character history
+
+### M8 — Story graph (multi-path stories)  ⬜  (research done; see progress log)
+Prior art: Ink/Twine/Yarn for authoring; formal models (choices-as-edges/nodes, hypertext,
+storylets/quality-based, character supernodes). Maps cleanly onto us:
+- [ ] **Episodes = nodes, path edges between them**; rendering a branch = pick a path and
+      concatenate the episodes along it (one linear video out — no renderer change)
+- [ ] Ink-style `->` diverts / choice metadata in `.md`; a `StoryGraph` resource over a season
+- [ ] Storylet option: episodes that "unlock" on conditions (reuses the resolution philosophy)
+- [ ] Optional Twine-like graph view in the dock; character supernode = our bible + history
 
 ---
 
@@ -195,7 +209,15 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
   resource; `CharacterData` bible fields; **dynamic `CastRegistry`** that scans
   `universes/*/characters/*.tscn` (id = basename); moved Leo/Lucas to
   `universes/leo_lucas/characters/`; `Show.universe` pointer. Cow re-rendered unchanged →
-  the dynamic registry resolves cast from the new home. **Next: moods, then Movie type.**
+  the dynamic registry resolves cast from the new home.
+- **2026-06-28** — **Moods.** Researched branching-narrative prior art first (Ink/Twine/Yarn +
+  formal story-graph models) → logged **M8: Story graph** (episodes-as-nodes, render a chosen
+  path). Then built moods (`domains/mood/`): a trickle-down preset (scene `{mood:x}` → episode
+  `mood:` → `--mood`) setting bg tint + beat pace + Piper voice `length_scale`/`noise_scale`.
+  `MoodLibrary` has built-ins (happy/tense/calm/spooky/manic) overridable via
+  `universes/<u>/moods/*.tres`. Parser now stamps scene+mood on every beat; `Tts.synth` takes
+  delivery params (cache key includes them). Verified: cookie `{mood: tense}` → slower/flatter
+  speech + dim bg. **Next: Movie production type, or templates.**
 
 ---
 

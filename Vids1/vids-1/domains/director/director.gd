@@ -23,6 +23,15 @@ var _episode_language := ""
 var _fallback_language := ""   # show/season default, passed by the Studio dock via --language
 var _spans := {}   # "music"/"ambience" name -> AudioStreamPlayer (active spans)
 
+# Mood state (set per scene; defaults = neutral).
+var _episode_mood := ""
+var _fallback_mood := ""       # show/season default, passed via --mood
+var _scene_seen := "<init>"   # sentinel so the first beat always applies a mood
+var _pace := 1.0
+var _voice_length := 1.0
+var _voice_noise := 0.667
+var _default_bg := Color(0.53, 0.81, 0.92)
+
 func _ready() -> void:
 	run()
 
@@ -32,8 +41,13 @@ func run() -> void:
 	await get_tree().process_frame
 	var path := _resolve_episode_path()
 	_fallback_language = _cmdline_value("--language")
+	_fallback_mood = _cmdline_value("--mood")
+	var bg := _background()
+	if bg:
+		_default_bg = bg.color
 	var script := ScriptParser.parse_file(path)
 	_episode_language = script.language
+	_episode_mood = script.mood
 	Log.info("Playing '%s' (%d beats, lang=%s, tts=%s)" % [
 		script.title, script.beats.size(),
 		_episode_language if _episode_language else "(default)",
@@ -43,6 +57,7 @@ func run() -> void:
 
 	for i in script.beats.size():
 		var beat: Dictionary = script.beats[i]
+		_maybe_apply_mood(beat)
 		match beat.get("type"):
 			"say": await _play_say(beat, i)
 			"wait": await get_tree().create_timer(beat.seconds).timeout
@@ -74,7 +89,7 @@ func _play_say(beat: Dictionary, index: int) -> void:
 	await get_tree().create_timer(clip.dur).timeout   # dialogue is the clock
 	c.stop_speaking()
 	_duck_music(MUSIC_DB, 0.2)
-	await get_tree().create_timer(BEAT_GAP).timeout
+	await get_tree().create_timer(BEAT_GAP * _pace).timeout   # mood pacing
 
 ## Real TTS clip if a voice resolves for the beat's language; else a placeholder tone.
 ## Returns {wav: AudioStreamWAV, dur: float} - dur drives the playhead.
@@ -82,11 +97,11 @@ func _clip_for(c: Character, beat: Dictionary) -> Dictionary:
 	var lang := _resolve_language(beat, c)
 	var model: String = c.data.voice_for(lang)
 	if model != "":
-		var wav := Tts.synth(beat.text, model)
+		var wav := Tts.synth(beat.text, model, _voice_length, _voice_noise)
 		if wav != null:
 			return {"wav": wav, "dur": _wav_seconds(wav)}
 		Log.warning("TTS failed for voice '%s', using tone" % model, "Director")
-	var dur := maxf(MIN_BEAT, SECS_PER_CHAR * beat.text.length())
+	var dur := maxf(MIN_BEAT, SECS_PER_CHAR * beat.text.length()) * _voice_length
 	return {"wav": Tone.speech_like(dur, 140.0 * c.data.voice_pitch), "dur": dur}
 
 ## Language for a line, most specific first:
@@ -104,6 +119,45 @@ func _resolve_language(beat: Dictionary, c: Character) -> String:
 
 func _wav_seconds(wav: AudioStreamWAV) -> float:
 	return (wav.data.size() / 2) / float(wav.mix_rate)   # 16-bit mono
+
+# --- mood (per-scene preset: bg tint + pace + voice delivery) ---
+
+func _maybe_apply_mood(beat: Dictionary) -> void:
+	var scene := str(beat.get("scene", ""))
+	if scene == _scene_seen:
+		return
+	_scene_seen = scene
+	_apply_mood(_resolve_mood_name(str(beat.get("scene_mood", ""))))
+
+## Mood name, most specific first: scene {mood} -> episode mood: -> --mood -> none.
+func _resolve_mood_name(scene_mood: String) -> String:
+	if scene_mood != "":
+		return scene_mood
+	if _episode_mood != "":
+		return _episode_mood
+	return _fallback_mood
+
+func _apply_mood(name: String) -> void:
+	var m := MoodLibrary.get_mood(name)
+	if m:
+		_pace = m.pace
+		_voice_length = m.voice_length_scale
+		_voice_noise = m.voice_noise_scale
+		_set_bg(m.bg_color if m.has_bg() else _default_bg)
+		Log.info("Mood: %s" % name, "Director")
+	else:
+		_pace = 1.0
+		_voice_length = 1.0
+		_voice_noise = 0.667
+		_set_bg(_default_bg)
+
+func _set_bg(color: Color) -> void:
+	var bg := _background()
+	if bg:
+		create_tween().tween_property(bg, "color", color, 0.4)
+
+func _background() -> ColorRect:
+	return get_parent().get_node_or_null("Background") as ColorRect
 
 # --- audio events (Point: sfx; Span: ambience/music) ---
 
