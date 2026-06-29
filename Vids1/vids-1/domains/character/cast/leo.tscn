@@ -8,6 +8,9 @@
 script = ExtResource("2_data")
 id = "leo"
 display_name = "Leo"
+voices = {
+"es": "es_MX-claude-high"
+}
 voice_pitch = 1.15
 
 [node name="Leo" type="Node2D"]

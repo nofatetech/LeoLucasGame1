@@ -83,11 +83,15 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
       Preview-vs-Final toggle (placeholder timing is already the default path)
 - **Done when:** editing the `.md` changes the rendered output, no code edits. ✔
 
-### M2 — Audio & timing for real  ⬜
-- [ ] TTS integration (offline, per-line clips, cached)
-- [ ] Clock resolves from true clip length
-- [ ] SFX points with offsets; ambience/music spans; auto-duck under dialogue
-- [ ] Subtitles generated from script lines (free byproduct)
+### M2 — Audio & timing for real  🟡 voice core done
+- [x] Local offline TTS via **Piper** (`domains/audio/tts.gd`), per-line clips, cached by
+      text+voice hash → deterministic re-renders; falls back to `Tone` if Piper/voice missing
+- [x] Clock resolves from **true clip length** (`_clip_for` / `_wav_seconds` in Director)
+- [x] Language model: episode `language:` + `CharacterData.language`/`voices` + per-line
+      `@lang` override, resolved most-specific-first (see [`plan-studio-panel.md`](plan-studio-panel.md) §3)
+- [x] Verified: `cow.md` renders in real LATAM Spanish (Leo `es_MX`, Lucas `es_AR`), lip-synced
+- [x] Subtitles already render from script lines (free)
+- [ ] Remaining: SFX points w/ offsets; ambience/music spans; auto-duck under dialogue
 - **Done when:** Final render has synced voices, sfx, music, and captions.
 
 ### M3 — Reusability & polish  ⬜
@@ -101,6 +105,15 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
 - [ ] `[sync: marker]` escape hatch (frame-exact points)
 - [ ] Multi-speaker overlap / crosstalk
 - [ ] Per-character voice tuning, music ducking envelopes
+
+### M5 — Studio panel + series structure  ⬜  (plan: [`plan-studio-panel.md`](plan-studio-panel.md))
+- [ ] `Show`/`Season`/`EpisodeRef` resources; defaults trickle down
+- [ ] Editor dock: browse shows/episodes, edit params, Preview/Render/Render-all, outputs
+- [ ] Show/season levels join the language resolution chain
+
+### M6 — Localization output  ⬜
+- [ ] Per-language `.srt` captions as a render byproduct
+- [ ] Language-variant renders from one script (`cow.es.mp4`, `cow.en.mp4`)
 
 ---
 
@@ -125,7 +138,15 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
   now parses `episodes/cookie.md` → `EpisodeScript` and plays its beats; cast auto-spawned
   and spread. Verified by render. Note: new `class_name` scripts need a project reimport
   (`godot --path . --import`) before headless runs see them in the global class cache.
-  **Next: M2 — real TTS so the clock comes from true clip length + captions/sfx.**
+- **2026-06-28** — **M2 voice core + language model.** Local Piper TTS wired
+  (`domains/audio/tts.gd`): per-line synth → 16-bit mono PCM → `AudioStreamWAV`, cached by
+  text+voice hash (deterministic), `Tone` fallback when Piper/voice absent. Clock now uses
+  real clip length. Language resolution chain implemented at episode/character/line levels
+  (`language:` frontmatter, `CharacterData.language`+`voices`, `alias@lang:`). `cow.md`
+  verified rendering in real LATAM Spanish (Leo es_MX, Lucas es_AR). Piper binary + voices
+  live outside the repo (`~/Apps/piper`, `VIDS_PIPER_BIN` to override). Wrote
+  `plan-studio-panel.md` (editor dock + Show/Season model + full language design).
+  **Next: M2 remainder (sfx/music), or M5 (studio panel).**
 
 ---
 

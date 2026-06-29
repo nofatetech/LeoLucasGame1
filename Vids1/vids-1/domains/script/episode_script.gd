@@ -9,6 +9,7 @@ extends Resource
 
 @export var episode: String = ""
 @export var title: String = ""
+@export var language: String = ""     # episode default language ("" = inherit show/global)
 @export var cast: Dictionary = {}     # alias -> cast id
 @export var beats: Array = []
 

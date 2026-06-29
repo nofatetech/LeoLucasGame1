@@ -1,6 +1,7 @@
 ---
 episode: "s01e02"
 title: "La vaca que interrumpe"
+language: es
 cast: { leo: leo, lucas: lucas }
 ---
 

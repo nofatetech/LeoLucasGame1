@@ -6,13 +6,15 @@ extends Node
 @export_file("*.md") var episode_path: String = "res://episodes/cookie.md"
 @export var quit_on_finish := false
 
-## Pacing: seconds of audio per character (placeholder until real TTS lengths in M2).
+## Placeholder-tone pacing, used only when no real voice is available for a line.
 const SECS_PER_CHAR := 0.06
 const MIN_BEAT := 0.8
 const BEAT_GAP := 0.25
 const GROUND_Y := 470.0
+const DEFAULT_LANGUAGE := "en"   # bottom of the language resolution chain
 
 var _cast := {}
+var _episode_language := ""
 
 func _ready() -> void:
 	run()
@@ -23,7 +25,11 @@ func run() -> void:
 	await get_tree().process_frame
 	var path := _resolve_episode_path()
 	var script := ScriptParser.parse_file(path)
-	Log.info("Playing '%s' (%d beats)" % [script.title, script.beats.size()], "Director")
+	_episode_language = script.language
+	Log.info("Playing '%s' (%d beats, lang=%s, tts=%s)" % [
+		script.title, script.beats.size(),
+		_episode_language if _episode_language else "(default)",
+		"on" if Tts.available() else "off (tone)"], "Director")
 	_build_cast(script)
 	await get_tree().process_frame   # let characters' _ready run
 
@@ -47,13 +53,39 @@ func _play_say(beat: Dictionary, index: int) -> void:
 	if c == null:
 		Log.warning("No cast member for '%s', skipping line" % beat.speaker, "Director")
 		return
-	var dur := maxf(MIN_BEAT, SECS_PER_CHAR * beat.text.length())
+	var clip := _clip_for(c, beat)
 	_set_subtitle(c.data.display_name, beat.text)
 	EventBus.beat_started.emit(index, beat.text)
-	c.speak(Tone.speech_like(dur, 140.0 * c.data.voice_pitch))
-	await get_tree().create_timer(dur).timeout
+	c.speak(clip.wav)
+	await get_tree().create_timer(clip.dur).timeout   # dialogue is the clock
 	c.stop_speaking()
 	await get_tree().create_timer(BEAT_GAP).timeout
+
+## Real TTS clip if a voice resolves for the beat's language; else a placeholder tone.
+## Returns {wav: AudioStreamWAV, dur: float} - dur drives the playhead.
+func _clip_for(c: Character, beat: Dictionary) -> Dictionary:
+	var lang := _resolve_language(beat, c)
+	var model: String = c.data.voice_for(lang)
+	if model != "":
+		var wav := Tts.synth(beat.text, model)
+		if wav != null:
+			return {"wav": wav, "dur": _wav_seconds(wav)}
+		Log.warning("TTS failed for voice '%s', using tone" % model, "Director")
+	var dur := maxf(MIN_BEAT, SECS_PER_CHAR * beat.text.length())
+	return {"wav": Tone.speech_like(dur, 140.0 * c.data.voice_pitch), "dur": dur}
+
+## Language for a line, most specific first: @lang -> character -> episode -> default.
+func _resolve_language(beat: Dictionary, c: Character) -> String:
+	if beat.get("lang", "") != "":
+		return beat.lang
+	if c.data.language != "":
+		return c.data.language
+	if _episode_language != "":
+		return _episode_language
+	return DEFAULT_LANGUAGE
+
+func _wav_seconds(wav: AudioStreamWAV) -> float:
+	return (wav.data.size() / 2) / float(wav.mix_rate)   # 16-bit mono
 
 func _build_cast(script: EpisodeScript) -> void:
 	# Spawn each speaking character once, spread evenly across the stage in first-seen order.

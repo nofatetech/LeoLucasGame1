@@ -46,6 +46,12 @@ static func parse_text(text: String) -> EpisodeScript:
 static func _parse_dialogue(line: String, colon: int, scene: String, ep: EpisodeScript) -> void:
 	var alias := line.substr(0, colon).strip_edges()
 	var rest := line.substr(colon + 1).strip_edges()
+	# optional per-line language override: "leo@en: ..."
+	var lang := ""
+	var at := alias.find("@")
+	if at != -1:
+		lang = alias.substr(at + 1).strip_edges()
+		alias = alias.substr(0, at).strip_edges()
 	var emote := ""
 	if rest.begins_with("("):                          # optional (emote) prefix
 		var close := rest.find(")")
@@ -54,7 +60,7 @@ static func _parse_dialogue(line: String, colon: int, scene: String, ep: Episode
 			rest = rest.substr(close + 1).strip_edges()
 	ep.beats.append({
 		"type": "say", "speaker": ep.resolve(alias),
-		"text": rest, "emote": emote, "scene": scene,
+		"text": rest, "emote": emote, "lang": lang, "scene": scene,
 	})
 
 static func _parse_directive_line(line: String, ep: EpisodeScript) -> void:
@@ -94,6 +100,7 @@ static func _parse_front_line(raw: String, ep: EpisodeScript) -> void:
 	match key:
 		"episode": ep.episode = _unquote(val)
 		"title": ep.title = _unquote(val)
+		"language": ep.language = _unquote(val)
 		"cast": ep.cast = _parse_inline_map(val)
 
 static func _parse_inline_map(val: String) -> Dictionary:
