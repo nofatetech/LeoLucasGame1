@@ -1,0 +1,59 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://domains/character/character.gd" id="1_char"]
+[ext_resource type="Script" path="res://domains/character/character_data.gd" id="2_data"]
+[ext_resource type="Script" path="res://domains/character/mouth.gd" id="3_mouth"]
+
+[sub_resource type="Resource" id="Resource_data"]
+script = ExtResource("2_data")
+id = "leo"
+display_name = "Leo"
+voice_pitch = 1.15
+
+[node name="Leo" type="Node2D"]
+script = ExtResource("1_char")
+data = SubResource("Resource_data")
+
+[node name="Voice" type="AudioStreamPlayer" parent="."]
+
+[node name="Body" type="Polygon2D" parent="."]
+color = Color(0.82, 0.23, 0.23, 1)
+polygon = PackedVector2Array(-34, 0, 34, 0, 44, -118, -44, -118)
+
+[node name="Head" type="Polygon2D" parent="."]
+position = Vector2(0, -168)
+color = Color(0.945, 0.76, 0.49, 1)
+polygon = PackedVector2Array(56, 0, 53.26, 17.3, 45.3, 32.92, 32.92, 45.3, 17.3, 53.26, 0, 56, -17.3, 53.26, -32.92, 45.3, -45.3, 32.92, -53.26, 17.3, -56, 0, -53.26, -17.3, -45.3, -32.92, -32.92, -45.3, -17.3, -53.26, -0, -56, 17.3, -53.26, 32.92, -45.3, 45.3, -32.92, 53.26, -17.3)
+
+[node name="Hair" type="Polygon2D" parent="."]
+position = Vector2(0, -168)
+color = Color(0.23, 0.16, 0.1, 1)
+polygon = PackedVector2Array(-58, 0, -56.02, -15.01, -50.23, -29, -41.01, -41.01, -29, -50.23, -15.01, -56.02, -0, -58, 15.01, -56.02, 29, -50.23, 41.01, -41.01, 50.23, -29, 56.02, -15.01, 58, -0)
+
+[node name="EyeWhiteL" type="Polygon2D" parent="."]
+position = Vector2(-20, -176)
+color = Color(1, 1, 1, 1)
+polygon = PackedVector2Array(13, 0, 11.26, 6.5, 6.5, 11.26, 0, 13, -6.5, 11.26, -11.26, 6.5, -13, 0, -11.26, -6.5, -6.5, -11.26, -0, -13, 6.5, -11.26, 11.26, -6.5)
+
+[node name="EyeWhiteR" type="Polygon2D" parent="."]
+position = Vector2(20, -176)
+color = Color(1, 1, 1, 1)
+polygon = PackedVector2Array(13, 0, 11.26, 6.5, 6.5, 11.26, 0, 13, -6.5, 11.26, -11.26, 6.5, -13, 0, -11.26, -6.5, -6.5, -11.26, -0, -13, 6.5, -11.26, 11.26, -6.5)
+
+[node name="PupilL" type="Polygon2D" parent="."]
+position = Vector2(-20, -176)
+color = Color(0, 0, 0, 1)
+polygon = PackedVector2Array(5, 0, 4.05, 2.94, 1.55, 4.76, -1.55, 4.76, -4.05, 2.94, -5, 0, -4.05, -2.94, -1.55, -4.76, 1.55, -4.76, 4.05, -2.94)
+
+[node name="PupilR" type="Polygon2D" parent="."]
+position = Vector2(20, -176)
+color = Color(0, 0, 0, 1)
+polygon = PackedVector2Array(5, 0, 4.05, 2.94, 1.55, 4.76, -1.55, 4.76, -4.05, 2.94, -5, 0, -4.05, -2.94, -1.55, -4.76, 1.55, -4.76, 4.05, -2.94)
+
+[node name="Mouth" type="Node2D" parent="."]
+position = Vector2(0, -140)
+script = ExtResource("3_mouth")
+
+[node name="Shape" type="Polygon2D" parent="Mouth"]
+color = Color(0.1, 0.05, 0.05, 1)
+polygon = PackedVector2Array(22, 0, 20.67, 4.79, 16.85, 9, 11, 12.12, 3.82, 13.79, -3.82, 13.79, -11, 12.12, -16.85, 9, -20.67, 4.79, -22, 0, -20.67, -4.79, -16.85, -9, -11, -12.12, -3.82, -13.79, 3.82, -13.79, 11, -12.12, 16.85, -9, 20.67, -4.79)
