@@ -4,18 +4,24 @@ A shared pool of **CC0 / public-domain** characters any Show or Movie can cast f
 now on purpose; fill `characters/` over time. `CastRegistry` discovers characters here the same
 way it does any universe: any `characters/<id>.tscn` becomes a castable `<id>`.
 
-## How to add a sample character (today)
+## How to add a sample character
 
-1. Duplicate `res://domains/character/character.tscn` into `characters/<id>.tscn`.
-2. Draw the look — flat `Polygon2D` shapes **or** `Sprite2D` nodes with PNG/WebP textures
-   (transparent PNG for cutouts). Keep the `Voice` (AudioStreamPlayer) and `Mouth` nodes.
-   Draw feet-at-origin, ~224px tall / ~58px half-wide so the auto-composition frames it right.
-3. Fill `CharacterData` on the root (id, display_name, voices, bible).
-4. If the art is sourced (not ours), drop its license/attribution under `LICENSES/` — see below.
+A character here is just a **`CharacterData` resource** — no scene to author. Drop
+`characters/<id>.tres` and it's castable as `<id>` (the shared `character_base.tscn` builds
+the look from its `Look` fields). Two looks:
 
-> **Coming (backlog, priority): a data-driven character base** so a sample is just a
-> `CharacterData` `.tres` (+ optional textures) instead of a full hand-built scene. Once that
-> lands, populating this library gets much cheaper. Until then, duplicate the template.
+- **Procedural** (`look = "procedural"`): set `body_color` / `skin_color` / `hair_color` /
+  `has_hair` / `eye_color`. Flat shapes, our default style. See `characters/sage.tres`.
+- **Image** (`look = "image"`): set `body_texture` to a PNG/WebP/SVG cutout (transparent PNG
+  for a clean edge); it's auto-scaled to the native cast height. Optional `mouth_closed` /
+  `mouth_open` cutouts lip-sync via swap. See `characters/glyph.tres`.
+
+Then fill identity/voice/bible (`id`, `display_name`, `voices`, `bio`, `tags`). If the art is
+sourced (not ours), add its license/attribution under `LICENSES/` — see below.
+
+> Need full control (a bespoke rig, layered art)? Author a hand-drawn `characters/<id>.tscn`
+> instead — a `.tscn` wins over a `.tres` of the same id. Data-driven is the default; bespoke
+> is the escape hatch for heroes.
 
 ## Licensing rule (locked)
 

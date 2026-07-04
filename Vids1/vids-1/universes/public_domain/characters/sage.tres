@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CharacterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://domains/character/character_data.gd" id="1_data"]
+
+[resource]
+script = ExtResource("1_data")
+id = "sage"
+display_name = "Sage"
+look = "procedural"
+body_color = Color(0.29, 0.45, 0.62, 1)
+skin_color = Color(0.86, 0.66, 0.5, 1)
+hair_color = Color(0.85, 0.85, 0.88, 1)
+has_hair = true
+eye_color = Color(0.1, 0.1, 0.12, 1)
+voices = {
+"en": "en_US-ryan-high"
+}
+voice_pitch = 0.9
+bio = "A calm, data-driven sample character — proof a cast member can be pure .tres."
+tags = ["sample", "procedural"]

@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3]
+
+; Shared scene for data-driven characters. Draws nothing by hand — CharacterArt builds the
+; look from the CharacterData that CastRegistry assigns. Do not add a character here; drop a
+; <id>.tres in a universe's characters/ folder instead.
+
+[ext_resource type="Script" path="res://domains/character/character_base.gd" id="1_base"]
+[ext_resource type="Script" path="res://domains/character/mouth.gd" id="2_mouth"]
+
+[node name="CharacterBase" type="Node2D"]
+script = ExtResource("1_base")
+
+[node name="Voice" type="AudioStreamPlayer" parent="."]
+
+[node name="Mouth" type="Node2D" parent="."]
+script = ExtResource("2_mouth")

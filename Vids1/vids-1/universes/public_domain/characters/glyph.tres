@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CharacterData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://domains/character/character_data.gd" id="1_data"]
+[ext_resource type="Texture2D" path="res://icon.svg" id="2_tex"]
+
+[resource]
+script = ExtResource("1_data")
+id = "glyph"
+display_name = "Glyph"
+look = "image"
+body_texture = ExtResource("2_tex")
+voices = {
+"en": "en_GB-alan-medium"
+}
+voice_pitch = 1.2
+bio = "An image-cutout sample — same base scene, texture instead of shapes (stand-in art: the project icon)."
+tags = ["sample", "image"]

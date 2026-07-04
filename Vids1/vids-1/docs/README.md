@@ -102,11 +102,12 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
 - **Done:** Final render has synced voices, sfx, ducked music, and on-screen captions.
 
 ### M3 — Reusability & polish  🟡
-- [ ] **⭐ PRIORITY — data-driven character base** (parameterized characters). One base scene
-      whose look comes from `CharacterData` — procedural (body/head/hair color, accessories)
-      **or** texture paths (PNG/WebP cutouts for PD/image characters) — so a character is a
-      `.tres`, not a duplicated `.tscn`. `CastRegistry` resolves an id to either a bespoke
-      `.tscn` (heroes) or the data base (simple/PD cast). Unlocks the sample library (M9).
+- [x] **Data-driven character base** (parameterized characters). `character_base.tscn` +
+      `CharacterArt` build a character's look from `CharacterData` — procedural (body/head/hair
+      color, eyes, hair toggle) **or** image cutouts (`body_texture`, auto-scaled; optional
+      `mouth_closed`/`mouth_open` for lip-sync) — so a character is a `.tres`, no scene to
+      author. `CastRegistry` resolves an id to a bespoke `.tscn` (heroes; wins on collision) or
+      the data base (simple/PD cast). Samples: `public_domain/characters/{sage,glyph}.tres`.
 - [ ] Background/prop registry
 - [ ] Camera framings (wide/mid/close/shake) + scene transitions/stingers  *(see M10 Slice B)*
 - [x] **Presentation media** (`domains/stage/`): `[slide: name]` / `[slide: stop]` (alias
@@ -315,6 +316,18 @@ storylets/quality-based, character supernodes). Maps cleanly onto us:
   marked ⭐ priority (kills `.tscn` duplication; covers procedural *and* image/PD cutouts).
   Scaffolded the sample library: `universes/public_domain/` (universe.tres + empty
   `characters/` + `LICENSES/` + README, CC0-only) — fill once the base lands.
+- **2026-07-04** — **Data-driven character base (M3 priority).** A character can now be pure
+  data: drop `characters/<id>.tres` (a `CharacterData`) and it's castable — the shared
+  `character_base.tscn` builds the look via `CharacterArt` at load, no scene to author.
+  `CharacterData` grew a **Look** group: `procedural` (body/skin/hair colour, hair toggle,
+  eyes → flat shapes matching the hand-drawn cast's footprint) or `image` (`body_texture`
+  auto-scaled to the native height + optional `mouth_closed`/`mouth_open` cutouts that lip-sync
+  via mouth.gd's swap mode). `CastRegistry` now indexes `.tres` too and resolves an id to the
+  base-scene+data, with a bespoke `.tscn` winning on collision (heroes keep full control).
+  Samples `public_domain/characters/{sage (procedural), glyph (image, icon stand-in)}.tres` +
+  `episodes/pd_demo.md`. Verified (Godot 4.7): both build in the real Director flow and render
+  clean, exit 0; bespoke `leo` unchanged. This unlocks cheap population of the PD library (M9)
+  — a sample is now a `.tres` (+ optional textures), not a hand-built scene.
 
 ---
 
