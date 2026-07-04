@@ -101,10 +101,20 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
       lip-synced, with ducked music + sfx (12 beats, no warnings)
 - **Done:** Final render has synced voices, sfx, ducked music, and on-screen captions.
 
-### M3 — Reusability & polish  ⬜
-- [ ] Cast registry (parameterized characters: color/hair/accessories)
+### M3 — Reusability & polish  🟡
+- [ ] **⭐ PRIORITY — data-driven character base** (parameterized characters). One base scene
+      whose look comes from `CharacterData` — procedural (body/head/hair color, accessories)
+      **or** texture paths (PNG/WebP cutouts for PD/image characters) — so a character is a
+      `.tres`, not a duplicated `.tscn`. `CastRegistry` resolves an id to either a bespoke
+      `.tscn` (heroes) or the data base (simple/PD cast). Unlocks the sample library (M9).
 - [ ] Background/prop registry
-- [ ] Camera framings (wide/mid/close/shake) + scene transitions/stingers
+- [ ] Camera framings (wide/mid/close/shake) + scene transitions/stingers  *(see M10 Slice B)*
+- [x] **Presentation media** (`domains/stage/`): `[slide: name]` / `[slide: stop]` (alias
+      `[media:]`) shows an image or `.ogv` clip — or a labelled placeholder — on the set
+      (behind the cast, graded with the scene). `MediaLibrary` resolves names under
+      `res://media/`; the Studio dock's **"Add media…"** transcodes any image/video in via
+      ffmpeg (→ png / Ogg Theora, optional aspect preset). Verified: real image + missing-asset
+      placeholder + clear all render clean.
 - [ ] Thumbnail + description emitted per episode
 - **Done when:** a new episode is "write `.md`, add any new assets, render."
 
@@ -156,7 +166,9 @@ The risky part is export + audio sync. Hardcode a scene, prove it renders to a f
       a template into `episodes/` and registers an `EpisodeRef`. Real **Vids1 self-promo**
       (`episodes/promo_vids1.md`, vertical) dogfoods the promo format — verified renders.
 - [ ] **Obsidian conventions** (wikilink cast refs, Dataview starters, vault) — Obsidian-first
-- [ ] **PD content pack** (`aesop` universe + `fable` format)
+- [ ] **PD content pack** (`aesop` universe + `fable` format) — 🟡 **library scaffolded:**
+      `universes/public_domain/` (universe.tres + empty `characters/` + `LICENSES/` + README;
+      CC0-only, licenses baked in). Fill with samples once the M3 data-driven base lands.
 - [ ] **Archetypes** (show presets: sitcom / storytime / news-desk)
 
 ### M10 — Moviemaking (cinematography)  🟡 grade done  (plan: [`plan-moviemaking.md`](plan-moviemaking.md))
@@ -288,6 +300,21 @@ storylets/quality-based, character supernodes). Maps cleanly onto us:
   vignetted; **re-render is byte-identical** (TIME-based grain is deterministic under Movie
   Maker). Note: new `class_name`s need a `.godot` class-cache rescan — happens on editor open
   (or `godot --editor --headless --quit-after N` for CLI). **Next: Slice B — camera & framing.**
+- **2026-07-04** — **Presentation media layer (M3).** New `[slide: name]` / `[slide: stop]`
+  directive (alias `[media:]`): shows an image or `.ogv` clip on the set — behind the cast,
+  tinted by the scene's grade/style — or a labelled **placeholder card** when the asset is
+  missing (same "names resolve to real files later" philosophy as audio). `domains/stage/
+  media_library.gd` resolves bare names under `res://media/`; the Director mounts a
+  `TextureRect`/`VideoStreamPlayer` panel on the Stage layer, one slide at a time, cleared on
+  `stop` + finish. Studio dock gained **"Add media…"** — pick any image/video, ffmpeg
+  transcodes it in (→ png / Ogg Theora) at an optional aspect preset, then rescans so it
+  imports. Verified headlessly: real image (`icon.svg`) + missing-asset placeholder +
+  `[slide: stop]` all render clean, exit 0. Registered `episodes/slides_demo.md` in `show.tres`
+  (raw `.md` files don't appear in the dock until an `EpisodeRef` points at them — the "New…"
+  button is what normally registers). **Backlog bumped:** M3 **data-driven character base**
+  marked ⭐ priority (kills `.tscn` duplication; covers procedural *and* image/PD cutouts).
+  Scaffolded the sample library: `universes/public_domain/` (universe.tres + empty
+  `characters/` + `LICENSES/` + README, CC0-only) — fill once the base lands.
 
 ---
 

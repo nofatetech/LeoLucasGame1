@@ -21,6 +21,7 @@ var _cast := {}
 var _episode_language := ""
 var _fallback_language := ""   # show/season default, passed by the Studio dock via --language
 var _spans := {}   # "music"/"ambience" name -> AudioStreamPlayer (active spans)
+var _slide: Control   # current presentation media (image/video/placeholder); one at a time
 
 # Mood state (set per scene; defaults = neutral).
 var _episode_mood := ""
@@ -74,9 +75,10 @@ func run() -> void:
 			"say": await _play_say(beat, i)
 			"wait": await get_tree().create_timer(beat.seconds).timeout
 			"grade": _apply_grade(str(beat.get("name", "")))   # mid-scene look override
-			"sfx", "ambience", "music": _fire_event(beat)   # Points/Spans: never block the clock
+			"sfx", "ambience", "music", "media": _fire_event(beat)   # Points/Spans: never block the clock
 
 	_stop_all_spans()
+	_clear_slide()
 	_set_subtitle("", "")
 	EventBus.episode_finished.emit()
 	Log.info("Episode finished", "Director")
@@ -266,6 +268,7 @@ func _fire_event(ev: Dictionary) -> void:
 		"sfx": _schedule_sfx(ev.name, ev.get("offset", 0.0))
 		"ambience": _span("ambience", ev)
 		"music": _span("music", ev)
+		"media": _media(ev)
 
 ## Play a one-shot, optionally `offset` seconds later. Async, intentionally not awaited.
 func _schedule_sfx(name: String, offset: float) -> void:
@@ -306,6 +309,73 @@ func _stop_all_spans() -> void:
 	for p in _spans.values():
 		p.queue_free()
 	_spans.clear()
+
+# --- presentation media (slides / clips shown on the set) ---
+
+## A visual Span: show a slide/clip on the set, or clear it ([slide: stop]). One at a time.
+## Sits on the Stage layer (in front of the backdrop, behind the cast) so the grade/style
+## post passes still tint it and a presenter can stand in front of it.
+func _media(ev: Dictionary) -> void:
+	_clear_slide()
+	if ev.get("action", "start") == "stop":
+		return
+	var panel := _slide_panel()
+	var m := MediaLibrary.resolve(ev.name)
+	match m.kind:
+		"video":
+			var v := VideoStreamPlayer.new()
+			v.stream = m.stream
+			v.expand = true
+			v.loop = true
+			v.play()
+			_mount_slide(v, panel)
+			Log.info("Slide (video): %s" % ev.name, "Director")
+		"image":
+			var t := TextureRect.new()
+			t.texture = m.texture
+			t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			_mount_slide(t, panel)
+			Log.info("Slide (image): %s" % ev.name, "Director")
+		_:
+			_mount_slide(_placeholder_card(ev.name), panel)
+			Log.warning("Slide '%s' not found in res://media/ — placeholder" % ev.name, "Director")
+
+## A screen-shaped rect (16:9) in the upper-centre of the frame, above where the cast stands.
+func _slide_panel() -> Rect2:
+	var vp := _viewport_size()
+	var w := vp.x * 0.62
+	var h := w * 9.0 / 16.0
+	return Rect2((vp.x - w) * 0.5, vp.y * 0.07, w, h)
+
+func _mount_slide(ctrl: Control, panel: Rect2) -> void:
+	ctrl.position = panel.position
+	ctrl.size = panel.size
+	ctrl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var stage := get_parent().get_node_or_null("Stage")
+	if stage:
+		stage.add_child(ctrl)   # after Background/Ground: in front of backdrop, behind cast
+	else:
+		add_sibling(ctrl, true)
+	_slide = ctrl
+
+## Deterministic stand-in when the asset is missing (matches the audio placeholder philosophy).
+func _placeholder_card(name: String) -> Control:
+	var card := ColorRect.new()
+	card.color = Color(0.11, 0.12, 0.17)
+	var label := Label.new()
+	label.text = "▶  %s" % (name if name != "" else "slide")
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_color_override("font_color", Color(0.88, 0.9, 0.96))
+	card.add_child(label)
+	return card
+
+func _clear_slide() -> void:
+	if _slide and is_instance_valid(_slide):
+		_slide.queue_free()
+	_slide = null
 
 # A character is drawn feet-at-origin and stands ~224px tall, ~58px half-wide at scale 1.
 # Tune these if you redraw the cast; the composition math derives everything from them.

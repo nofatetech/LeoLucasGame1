@@ -144,6 +144,7 @@ static func _normalize(inner: String) -> Dictionary:
 		"sfx": return {"type": "sfx", "name": name, "offset": offset}
 		"ambience": return {"type": "ambience", "name": name, "action": action if action else "start"}
 		"music": return {"type": "music", "name": name, "action": action if action else "start"}
+		"slide", "media": return {"type": "media", "name": name, "action": action if action else "start"}
 		_:
 			push_warning("Directive not yet supported, skipped: [%s]" % verb)
 			return {}

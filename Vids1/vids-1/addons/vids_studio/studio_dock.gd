@@ -18,6 +18,12 @@ var _ffmpeg_checked := false
 var _ffmpeg_ok := false
 var _new_menu: PopupMenu
 var _template_paths: Array = []
+var _media_dialog   # EditorFileDialog (lazy)
+var _media_menu: PopupMenu
+var _media_src := ""
+var _media_presets: Array = []
+
+const _VIDEO_IN := ["mp4", "mov", "mkv", "webm", "avi", "m4v", "ogv", "gif"]
 
 func _enter_tree() -> void:
 	_build_ui()
@@ -44,6 +50,7 @@ func _build_ui() -> void:
 	var actions := HBoxContainer.new()
 	add_child(actions)
 	_add_button(actions, "New…", _on_new_from_template)
+	_add_button(actions, "Add media…", _on_add_media)
 	_add_button(actions, "Preview", _on_preview)
 	_add_button(actions, "Render", _on_render)
 	_add_button(actions, "Render all", _on_render_all)
@@ -172,6 +179,76 @@ func _new_season() -> Season:
 	s.title = "Season 1"
 	_show.seasons.append(s)
 	return s
+
+# --- add media (import a slide/clip into res://media/ in a Godot-friendly format) ---
+
+# Pick any image/video, transcode it via ffmpeg to a format the presentation layer plays
+# (images -> png, video -> Ogg Theora .ogv), optionally scaled/letterboxed to a target ratio.
+# Reuses the same ffmpeg the render transcode uses; drops the asset into res://media/ by name.
+func _on_add_media() -> void:
+	if not _ffmpeg_available():
+		_status.text = "ffmpeg not on PATH — needed to convert media"
+		return
+	if _media_dialog == null:
+		_media_dialog = EditorFileDialog.new()
+		_media_dialog.access = EditorFileDialog.ACCESS_FILESYSTEM
+		_media_dialog.file_mode = EditorFileDialog.FILE_MODE_OPEN_FILE
+		_media_dialog.add_filter("*.mp4, *.mov, *.mkv, *.webm, *.avi, *.m4v, *.gif", "Video")
+		_media_dialog.add_filter("*.png, *.jpg, *.jpeg, *.webp, *.bmp", "Image")
+		_media_dialog.file_selected.connect(_on_media_chosen)
+		add_child(_media_dialog)
+	_media_dialog.popup_centered_ratio(0.6)
+
+func _on_media_chosen(path: String) -> void:
+	_media_src = path
+	_media_presets = [
+		{"label": "Keep source size", "size": Vector2i.ZERO},
+		{"label": "1920×1080 (16:9)", "size": Vector2i(1920, 1080)},
+		{"label": "1080×1920 (9:16)", "size": Vector2i(1080, 1920)},
+		{"label": "1080×1080 (1:1)", "size": Vector2i(1080, 1080)},
+	]
+	var s: Style = StyleLibrary.get_style(_show.style) if _show else null
+	if s and s.has_resolution():
+		_media_presets.append({
+			"label": "Show style (%d×%d)" % [s.resolution.x, s.resolution.y], "size": s.resolution})
+	if _media_menu == null:
+		_media_menu = PopupMenu.new()
+		_media_menu.id_pressed.connect(_on_media_preset)
+		add_child(_media_menu)
+	_media_menu.clear()
+	for i in _media_presets.size():
+		_media_menu.add_item(_media_presets[i].label, i)
+	_media_menu.reset_size()
+	_media_menu.popup(Rect2i(DisplayServer.mouse_get_position(), Vector2i.ZERO))
+
+func _on_media_preset(id: int) -> void:
+	_convert_media(_media_src, _media_presets[id].size)
+
+func _convert_media(src: String, size: Vector2i) -> void:
+	var media_dir := ProjectSettings.globalize_path("res://media")
+	DirAccess.make_dir_recursive_absolute(media_dir)
+	var base := src.get_file().get_basename().to_lower().replace(" ", "_")
+	var is_video := src.get_extension().to_lower() in _VIDEO_IN
+	var out := media_dir.path_join(base + (".ogv" if is_video else ".png"))
+	var args := ["-y", "-i", src]
+	if size != Vector2i.ZERO:
+		# Fit inside the target box, then letterbox-pad to exactly it (keeps aspect, no crop).
+		args += ["-vf", "scale=%d:%d:force_original_aspect_ratio=decrease,pad=%d:%d:(ow-iw)/2:(oh-ih)/2:color=black" % [
+			size.x, size.y, size.x, size.y]]
+	if is_video:
+		args += ["-c:v", "libtheora", "-q:v", "8", "-c:a", "libvorbis"]
+	else:
+		args += ["-frames:v", "1"]
+	args.append(out)
+	_status.text = "Converting %s…" % src.get_file()
+	var code := OS.execute("ffmpeg", args, [], true)
+	if code == 0 and FileAccess.file_exists(out):
+		_status.text = "Added media/%s — use  [slide: %s]" % [out.get_file(), base]
+		var efs := EditorInterface.get_resource_filesystem()
+		if efs:
+			efs.scan()   # import the new asset so renders can load it
+	else:
+		_status.text = "ffmpeg failed (code %d) for %s" % [code, src.get_file()]
 
 func _list_templates() -> Array:
 	var out := []
