@@ -449,8 +449,13 @@ func _spread(n: int, width: float) -> Array:
 		out.append(left + (right - left) * float(i) / float(n - 1))
 	return out
 
+## The true output frame size (project viewport / override.cfg), not the window's visible
+## rect: with a height-clamped window the visible rect differs, and Movie Maker captures
+## the project-size canvas, so framing to the window clips the cast.
 func _viewport_size() -> Vector2:
-	return get_viewport().get_visible_rect().size
+	return Vector2(
+		ProjectSettings.get_setting("display/window/size/viewport_width"),
+		ProjectSettings.get_setting("display/window/size/viewport_height"))
 
 ## Episode to play: the exported default, overridable at render time with
 ## `-- --episode res://episodes/<name>.md` (no code edit needed).

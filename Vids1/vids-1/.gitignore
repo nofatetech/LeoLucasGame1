@@ -2,7 +2,8 @@
 .godot/
 /android/
 
-# Rendered video output
+# Rendered output (videos, GIFs, contact sheets)
+output/
 *.avi
 *.mp4
 
