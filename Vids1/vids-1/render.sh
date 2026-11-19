@@ -83,7 +83,7 @@ user_args=(--render --episode "res://$episode")
 echo "render.sh: $episode → $out.mp4 (style: ${effective:-default}${resolution:+, ${resolution/ /×}})"
 rm -f "$out.avi"
 "${runner[@]}" godot --path . --fixed-fps 30 --write-movie "$out.avi" res://scenes/main.tscn \
-  -- "${user_args[@]}" 2>&1 | grep -E "Director|Done recording|frames at|ERROR|SCRIPT ERROR" || true
+  -- "${user_args[@]}" 2>&1 | grep -E "Director|Done recording|frames at|ERROR|WARNING" || true
 [[ -s "$out.avi" ]] || die "render produced no video ($out.avi missing or empty)"
 
 # --- transcode ---
