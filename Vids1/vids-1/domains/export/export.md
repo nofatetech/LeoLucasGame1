@@ -4,7 +4,19 @@ Godot renders **deterministically frame-by-frame** with synced audio when launch
 `--write-movie`. Real time is ignored — a slow frame just takes longer to write, output FPS
 is fixed (`editor/movie_writer/fps`, set to 30 in `project.godot`).
 
-## Render the current episode to a video
+## Quick: `render.sh`
+
+```bash
+./render.sh cow              # → output/cow.mp4 (episode's own style)
+./render.sh cow vertical     # → output/cow_vertical.mp4 (1080×1920)
+./render.sh cow --lang en    # language fallback
+```
+
+It does everything below: resolves the style's resolution (universe `.tres`, then `StyleLibrary.BUILTIN`),
+writes and removes `override.cfg`, renders on the display (`xvfb-run` if there is none), and transcodes
+to MP4. `./render.sh -h` for details.
+
+## Render the current episode to a video (by hand)
 
 ```bash
 # AVI (MJPEG) is the built-in writer; transcode to mp4 with ffmpeg after.
